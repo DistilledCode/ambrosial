@@ -1,0 +1,7 @@
+__pycache__
+venv-swiggy
+.vscode
+.todo
+.checkout
+.wakatime-project
+test.ipynb
