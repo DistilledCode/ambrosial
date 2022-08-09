@@ -4,4 +4,6 @@ venv-swiggy
 .todo
 .checkout
 .wakatime-project
-test.ipynb
+*.ipynb
+*.msgpack
+*.json
