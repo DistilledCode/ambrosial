@@ -42,20 +42,22 @@ class Swiggy:
             quit()
         return [order for order in self.response.json()["data"]["orders"]]
 
+    @property
     def _exhausted(self) -> bool:
         if not self._valid_response():
             print(self.reason)
             quit()
         return not bool(self.json["data"]["orders"])
 
-    def fetch(self, limit: Optional[int] = 10):
+    def fetch(self, limit: Optional[int] = 20):
         limit = 10**8 if limit is None else limit
         self._send_req(order_id=None)
         self.orders.extend(self._parse_orders())
-        while self._exhausted() is False and len(self.orders) < limit:
+        while self._exhausted is False and len(self.orders) < limit:
             self._send_req(order_id=self.orders[-1]["order_id"])
             self.orders.extend(self._parse_orders())
             print(f"\r Retrieved {min(len(self.orders),limit):>4} orders", end="")
+        print()
         self.orders = [self._evaluate(order) for order in self.orders][:limit]
 
     def fetchall(self):
