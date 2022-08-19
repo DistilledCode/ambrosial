@@ -4,7 +4,13 @@ from typing import Any, Optional, Union
 
 @dataclass(kw_only=True, frozen=True)
 class OrderItemAddons:
-    pass
+    choice_id: int
+    group_id: int
+    name: str
+    price: Union[float, int]
+    external_choice_id: str
+    external_group_id: str
+    addon_tax_charges: dict[str, Union[int, float]]
 
 
 @dataclass(kw_only=True, frozen=True)

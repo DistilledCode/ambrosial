@@ -7,14 +7,14 @@ class DeliveryAddress:
     address: str
     landmark: str
     area: str
-    mobile: int
+    mobile: str
     annotation: str
     instructions: str
     email: str
     city: str
-    lat: float
-    lng: float
-    id: int
+    lat: str
+    lng: str
+    id: str
     address_line1: str
     address_line2: str
     alternate_mobile: str
