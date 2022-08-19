@@ -58,42 +58,24 @@ class Swiggy:
             self.orders.extend(self._parse_orders())
             print(f"\r Retrieved {min(len(self.orders),limit):>4} orders", end="")
         print()
-        # self.orders = self.orders[:limit]
         self.orders = [self._evaluate(order) for order in self.orders][:limit]
 
     def fetchall(self):
         self.fetch(limit=None)
 
-    # def _literal_eval(self, val: str):
-    # return literal_eval(val)
-    # try:
-    #     eval_val = literal_eval(val)
-    #     if eval_val.__class__ is int and not (-(2**63) < eval_val < 2**63 - 1):
-    #         return val
-    #     return eval_val
-    # except SyntaxError:
-    #     return val
-    # except ValueError:
-    #     return val
-
     def _evaluate(self, order: dict):
-        if order["offers_data"]:
+        for ind, transaction in enumerate(order["payment_transactions"]):
+            pg_response = transaction["paymentMeta"]["extPGResponse"]
+            if pg_response.__class__ is str and pg_response != "":
+                pg_response = pg_response.replace("false", "False")
+                pg_response = pg_response.replace("true", "True")
+                transaction["paymentMeta"]["extPGResponse"] = literal_eval(pg_response)
+                order["payment_transactions"][ind] = transaction
+        order["paymentTransactions"] = order["payment_transactions"]
+
+        if order["offers_data"].__class__ is str and order["offers_data"] != "":
             order["offers_data"] = literal_eval(order["offers_data"])
         return order
-        # ord["offers_data"] = self._literal_eval(ord["offers_data"])
-        # try:
-        #     items = ord.items()
-        # except AttributeError:
-        #     return ord
-        # for key, val in items:
-        #     if val.__class__ is list:
-        #         for ind, i in enumerate(val):
-        #             val[ind] = self._evaluate(i)
-        #     if val.__class__ is str:
-        #         ord[key] = self._literal_eval(val)
-        #     if val.__class__ is dict:
-        #         ord[key] = self._evaluate(val)
-        # return ord
 
     def save(self, fname: str = "orders.json", **kwargs: dict):
         with open(fname, "w", encoding="utf-8") as f:
