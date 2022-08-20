@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Union
+from typing import Optional, Union
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -16,12 +16,12 @@ class Restaurant:
     cuisine: list[str] = field(default_factory=list)
     closing_in_min: int
     closed: bool
-    restaurant_fulfilment_charges: int
+    fulfilment_charges: int
     order_rating: int
-    rating: dict[str, Union[str, int]]  # rating_meta['restaurant_rating']
+    rating: Optional[int] = None  # rating_meta['restaurant_rating']['rating']
     coordinates: dict[str, float]  # restaurant_lat_lng: [xx.xxxxxxx, xx.xxxxxxx]
     customer_distance: float
-    restaurant_new_slug: str
+    new_slug: str
     has_inventory: Union[str, int]
     cover_image: str
     cover_url: str = "https://res.cloudinary.com/swiggy/image/upload/" + cover_image
