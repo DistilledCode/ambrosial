@@ -4,6 +4,7 @@ from dataclasses import dataclass
 @dataclass(kw_only=True, frozen=True)
 class DeliveryAddress:
     version: int
+    name: str
     address: str
     landmark: str
     area: str
@@ -20,8 +21,9 @@ class DeliveryAddress:
     alternate_mobile: str
     voice_directions_s3_uri: str
     flat_no: str
-    is_verified: bool
-    reverse_geo_code_failed: bool
 
     def __eq__(self, other):
         return self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)

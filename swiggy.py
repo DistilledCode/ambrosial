@@ -30,12 +30,6 @@ class Swiggy:
         self.reason = None
         return True
 
-    def as_dataclass(self):
-        self.orders_ = [
-            dict2dataclass(f"order{index}", order)
-            for index, order in enumerate(self.orders)
-        ]
-
     def _parse_orders(self) -> list[dict]:
         if not self._valid_response():
             print(self.reason)

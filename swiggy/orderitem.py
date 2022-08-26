@@ -10,7 +10,7 @@ class OrderItemAddons:
     price: Union[float, int]
     external_choice_id: str
     external_group_id: str
-    addon_tax_charges: dict[str, Union[int, float]]
+    # addon_tax_charges: dict[str, Union[int, float]]
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -21,7 +21,7 @@ class OrderItemVariants:
     price: float
     external_choice_id: str
     external_group_id: str
-    variant_tax_charges: dict[str, Union(Union[int, float], str)]
+    # variant_tax_charges: dict[str, Union(Union[int, float], str)]
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -29,17 +29,17 @@ class OrderItem:
     rewardType: Any
     item_key: str
     has_variantv2: bool
-    item_group_tag_id: str
-    added_by_user_id: int
-    added_by_username: str
-    group_user_item_map: dict
+    # item_group_tag_id: str
+    # added_by_user_id: int
+    # added_by_username: str
+    # group_user_item_map: dict
     item_id: int
     external_item_id: str
     name: str
     is_veg: bool  # 1 (True) or 0 (False)
     variants: list[OrderItemVariants] = field(default_factory=list)
     addons: list[OrderItemAddons] = field(default_factory=list)
-    image_id: str
+    image_id: str = "swiggy_pay/SwiggyLogo"
     image_url: str = "https://res.cloudinary.com/swiggy/image/upload/" + image_id
     quantity: int
     free_item_quantity: int
@@ -52,11 +52,12 @@ class OrderItem:
     category_details: dict[str, str]
     item_charges: dict[str, Union(int, float)]
     item_total_discount: float
-    item_delivery_fee_reversal: int
+    # item_delivery_fee_reversal: int
+    # single_variant: bool
+    # in_stock: int
     single_variant: bool
-    in_stock: int
-    meal_quantity: str
+    # meal_quantity: str
     # if meal_quantity == "1" then bottom three are None
-    item_type: Optional[str] = None
-    meal_id: Optional[str] = None
-    meal_name: Optional[str] = None
+    # item_type: Optional[str] = None
+    # meal_id: Optional[str] = None
+    # meal_name: Optional[str] = None
