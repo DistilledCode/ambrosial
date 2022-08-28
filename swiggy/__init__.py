@@ -6,7 +6,10 @@ import browser_cookie3
 from msgpack import pack, unpack
 from requests import get
 
-from utils import dict2dataclass
+from swiggy.address import DeliveryAddress
+from swiggy.orderitem import OrderItem
+from swiggy.restaurant import Restaurant
+from swiggy.utils import order_item_useless_attrs, order_useless_attrs
 
 
 class Swiggy:
@@ -52,12 +55,12 @@ class Swiggy:
             self.orders.extend(self._parse_orders())
             print(f"\r Retrieved {min(len(self.orders),limit):>4} orders", end="")
         print()
-        self.orders = [self._evaluate(order) for order in self.orders][:limit]
+        self.orders = [self._post_process(order) for order in self.orders][:limit]
 
     def fetchall(self):
         self.fetch(limit=None)
 
-    def _evaluate(self, order: dict):
+    def _post_process(self, order: dict):
         for ind, transaction in enumerate(order["payment_transactions"]):
             pg_response = transaction["paymentMeta"]["extPGResponse"]
             if pg_response.__class__ is str and pg_response != "":
@@ -65,10 +68,32 @@ class Swiggy:
                 pg_response = pg_response.replace("true", "True")
                 transaction["paymentMeta"]["extPGResponse"] = literal_eval(pg_response)
                 order["payment_transactions"][ind] = transaction
-        order["paymentTransactions"] = order["payment_transactions"]
 
         if order["offers_data"].__class__ is str and order["offers_data"] != "":
             order["offers_data"] = literal_eval(order["offers_data"])
+
+        if order.get("rating_meta", None) is None:
+            order["rating_meta"] = {
+                "restaurant_rating": {"rating": 0},
+                "delivery_rating": {"rating": 0},
+            }
+        else:
+            order["rating_meta"].pop("asset_id", None)
+
+        for attr in order_useless_attrs:
+            order.pop(attr, None)
+
+        for item in order["order_items"]:
+            for attr in order_item_useless_attrs:
+                item.pop(attr, None)
+            for variant in item["variants"]:
+                variant.pop("variant_tax_charges", None)
+            for addon in item["addons"]:
+                addon.pop("addon_tax_charges", None)
+
+        order["delivery_address"].pop("is_verified", None)
+        order["delivery_address"].pop("reverse_geo_code_failed", None)
+
         return order
 
     def save(self, fname: str = "orders.json", **kwargs: dict):
@@ -86,3 +111,29 @@ class Swiggy:
     def loadb(self, fname: str = "orders.msgpack", **kwargs: dict):
         with open(fname, "rb") as f:
             self.orders = unpack(f, **kwargs)
+
+    def deliveryaddress(order: dict):
+        return DeliveryAddress(**order["delivery_address"])
+
+    def _order_item(order: dict):
+        attrs = list(OrderItem.__annotations__)
+        # not keys of ``order_item``
+        attrs.remove("order_id")
+        attrs.remove("restaurant_id")
+
+        for item in order["order_items"]:
+            for attr in attrs:
+                item.setdefault(attr, None)
+            if item["image_id"] is None or not item["image_id"]:
+                item["image_id"] = "swiggy_pay/SwiggyLogo"
+            else:
+                order["rating_meta"].pop("asset_id", None)
+
+        return [
+            OrderItem(
+                **{attr: item[attr] for attr in attrs},
+                order_id=order["order_id"],
+                restaurant_id=order["restaurant_id"],
+            )
+            for item in order["order_items"]
+        ]

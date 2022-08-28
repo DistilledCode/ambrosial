@@ -23,8 +23,8 @@ class Restaurant:
     def __eq__(self, other):
         return self.id == other.id
 
-    def __str__(self):
-        return f"{self.name}, {self.area_name}, {self.city_name}"
-
     def __hash__(self) -> int:
         return hash(self.id)
+
+    def __str__(self):
+        return f"{self.name}, {self.area_name}, {self.city_name}"
