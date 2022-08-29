@@ -11,6 +11,8 @@ from swiggy.orderitem import OrderItem
 from swiggy.restaurant import Restaurant
 from swiggy.utils import order_item_useless_attrs, order_useless_attrs
 
+#! We can cache all the return values, the limit should be number of total orders
+
 
 class Swiggy:
     def __init__(self):
@@ -115,7 +117,21 @@ class Swiggy:
     def deliveryaddress(order: dict):
         return DeliveryAddress(**order["delivery_address"])
 
-    def _order_item(order: dict):
+    def restaurant(order: dict):
+        attrs = list(Restaurant.__annotations__)
+        attrs.remove("customer_distance")
+        attrs.remove("coordinates")
+        attrs = ["restaurant_" + attr for attr in attrs]
+        return Restaurant(
+            **{attr.replace("restaurant_", ""): order[attr] for attr in attrs},
+            coordinates=order["restaurant_lat_lng"],
+            customer_distance=(
+                float(order["restaurant_customer_distance"]),
+                order["delivery_address"]["id"],
+            ),
+        )
+
+    def order_item(order: dict):
         attrs = list(OrderItem.__annotations__)
         # not keys of ``order_item``
         attrs.remove("order_id")

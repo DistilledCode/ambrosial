@@ -7,6 +7,16 @@ from swiggy.restaurant import Restaurant
 
 
 @dataclass(kw_only=True, frozen=True)
+class OffersData:
+    id: str
+    super_type: str
+    total_offer_discount: float
+    discount_share: dict[str, Union[int, float]]
+    discount_type: str
+    description: str
+
+
+@dataclass(kw_only=True, frozen=True)
 class Payment:
     paymentMethod: str
     paymentMethodDisplayName: str
@@ -37,7 +47,7 @@ class Order:
     coupon_applied: str
     #! offers_data can also be empty string (`""`), convert that to empty list.
     # TODO: check if an attr value can conditionally depend on other attr value
-    offers_data: tuple[dict]
+    offers_data: list[OffersData] = field(default_factory=list)
     order_time: str
     customer_id: str
     order_status: str
