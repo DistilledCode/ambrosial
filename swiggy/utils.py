@@ -76,6 +76,9 @@ order_useless_attrs = [
     "restaurant_packing_charges",
     "user_flow_info",
     "restaurant_coverage_area",
+    "pg_response_time",
+    "is_coupon_auto_applied",
+    "billing_address_id",
 ]
 order_item_useless_attrs = [
     "item_group_tag_id",

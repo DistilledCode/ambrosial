@@ -7,6 +7,7 @@ from msgpack import pack, unpack
 from requests import get
 
 from swiggy.address import DeliveryAddress
+from swiggy.order import OffersData, Order, Payment
 from swiggy.orderitem import OrderItem
 from swiggy.restaurant import Restaurant
 from swiggy.utils import order_item_useless_attrs, order_useless_attrs
@@ -96,6 +97,15 @@ class Swiggy:
         order["delivery_address"].pop("is_verified", None)
         order["delivery_address"].pop("reverse_geo_code_failed", None)
 
+        # order.setdefault("order_notes", None)
+        # order.setdefault("base_order_id", None)
+        # order.setdefault("cloning_reason", None)
+        # order.setdefault("cancellation_source", None)
+        # order.setdefault("is_bank_discount", None)
+
+        for attr in list(Order.__annotations__):
+            order.setdefault(attr, None)
+
         return order
 
     def save(self, fname: str = "orders.json", **kwargs: dict):
@@ -131,7 +141,31 @@ class Swiggy:
             ),
         )
 
-    def order_item(order: dict):
+    def offers_data(order: dict) -> Optional[list[OffersData]]:
+        if order["offers_data"] == "":
+            return
+        attrs = list(OffersData.__annotations__)
+        attrs.remove("order_id")
+        attrs.remove("coupon_applied")
+        return [
+            OffersData(
+                **{attr: offer[attr] for attr in attrs},
+                order_id=order["order_id"],
+                coupon_applied=order["coupon_applied"],
+            )
+            for offer in order["offers_data"]
+        ]
+
+    def payment(order: dict) -> list[Payment]:
+        if not order["payment_transactions"]:
+            return []
+        attrs = list(Payment.__annotations__)
+        return [
+            Payment(**{attr: pay[attr] for attr in attrs})
+            for pay in order["payment_transactions"]
+        ]
+
+    def order_item(order: dict) -> list[OrderItem]:
         attrs = list(OrderItem.__annotations__)
         # not keys of ``order_item``
         attrs.remove("order_id")
@@ -142,8 +176,6 @@ class Swiggy:
                 item.setdefault(attr, None)
             if item["image_id"] is None or not item["image_id"]:
                 item["image_id"] = "swiggy_pay/SwiggyLogo"
-            else:
-                order["rating_meta"].pop("asset_id", None)
 
         return [
             OrderItem(
