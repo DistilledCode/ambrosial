@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+URL = "https://res.cloudinary.com/swiggy/image/upload/"
+
 
 @dataclass(kw_only=True)
 class Restaurant:
@@ -24,6 +26,7 @@ class Restaurant:
         _lat_lng = [float(i) for i in self.coordinates.split(",")]
         self.coordinates = dict(zip(["lat", "lng"], _lat_lng))
         self.cuisine = tuple(self.cuisine)
+        self.image = URL + self.cover_image
 
     def __eq__(self, other):
         return self.id == other.id

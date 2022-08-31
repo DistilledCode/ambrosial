@@ -160,3 +160,9 @@ class Order:
             key: float(self.cust_lat_lng[key]) for key in self.cust_lat_lng
         }
         self.order_tags = tuple(self.order_tags)
+
+    def __eq__(self, other):
+        return self.order_id == other.order_id
+
+    def __hash__(self) -> int:
+        return hash(self.order_id)

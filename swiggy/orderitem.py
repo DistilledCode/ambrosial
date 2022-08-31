@@ -1,38 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Optional, Union
+from typing import Union
 
-# @dataclass(kw_only=True, frozen=True)
-# class OrderItemAddons:
-#     item_id: str
-#     choice_id: str
-#     group_id: str
-#     name: str
-#     price: Union[float, int]
-#     external_choice_id: str
-#     external_group_id: str
-
-#     def __eq__(self, other):
-#         return self.choice_id == other.choice_id
-
-#     def __hash__(self) -> int:
-#         return hash(self.choice_id)
-
-
-# @dataclass(kw_only=True, frozen=True)
-# class OrderItemVariants:
-#     item_id: str
-#     variation_id: int
-#     group_id: int
-#     name: str
-#     price: Union[float, int]
-#     external_choice_id: str
-#     external_group_id: str
-
-#     def __eq__(self, other):
-#         return self.variation_id == other.variation_id
-
-#     def __hash__(self) -> int:
-#         return hash(self.variation_id)
+URL = "https://res.cloudinary.com/swiggy/image/upload/"
 
 
 @dataclass(kw_only=True, frozen=False, order=True)
@@ -64,7 +33,7 @@ class OrderItem:
 
     def __post_init__(self):
         self.is_veg = bool(self.is_veg)
-        self.image = "https://res.cloudinary.com/swiggy/image/upload/" + self.image_id
+        self.image = URL + self.image_id
         self.quantity = int(self.quantity)
         self.free_item_quantity = (
             int(self.free_item_quantity) if self.free_item_quantity else 0
@@ -77,10 +46,6 @@ class OrderItem:
         self.item_total_discount = float(self.item_total_discount)
         for key in self.item_charges:
             self.item_charges[key] = float(self.item_charges[key])
-
-    # @property
-    # def image(self) -> set[tuple[str]]:
-    #     return "https://res.cloudinary.com/swiggy/image/upload/" + self.image_id
 
     def __eq__(self, other):
         return self.item_id == other.item_id

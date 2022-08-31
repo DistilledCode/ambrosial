@@ -1,25 +1,27 @@
 from ast import literal_eval
+from functools import cache
+from itertools import chain
 from json import dump, load
 from typing import Optional
+from warnings import warn
 
 import browser_cookie3
 from msgpack import pack, unpack
 from requests import get
 
-from swiggy.address import DeliveryAddress
-from swiggy.order import OffersData, Order, Payment
-from swiggy.orderitem import OrderItem
-from swiggy.restaurant import Restaurant
-from swiggy.utils import order_item_useless_attrs, order_useless_attrs
-
-#! We can cache all the return values, the limit should be number of total orders
+import swiggy.convert as convert
+from swiggy.convert import attrs
 
 
 class Swiggy:
     def __init__(self):
         self.url = "https://www.swiggy.com/dapi/order/all"
         self.cookie_jar = browser_cookie3.load("www.swiggy.com")
-        self.orders = []
+        self.orders_raw = []
+        self.orders_processed = []
+        self.json = ""
+        self.response = None
+        self.reason = ""
 
     def _send_req(self, order_id: Optional[int]):
         param = {} if order_id is None else {"order_id": order_id}
@@ -51,14 +53,21 @@ class Swiggy:
 
     def fetch(self, limit: Optional[int] = 20):
         limit = 10**8 if limit is None else limit
+        if limit.__class__ is not int or limit < 0:
+            raise ValueError(
+                f"limit should be a positive integer, not {limit}({limit.__class__})"
+            )
+        if limit % 10 != 0:
+            warn(f"Orders are fetched in multiples of 10. Fetching {(limit//10+1)*10}.")
+        self.orders_raw = []
         self._send_req(order_id=None)
-        self.orders.extend(self._parse_orders())
-        while self._exhausted is False and len(self.orders) < limit:
-            self._send_req(order_id=self.orders[-1]["order_id"])
-            self.orders.extend(self._parse_orders())
-            print(f"\r Retrieved {min(len(self.orders),limit):>4} orders", end="")
+        self.orders_raw.extend(self._parse_orders())
+        while self._exhausted is False and len(self.orders_raw) < limit:
+            self._send_req(order_id=self.orders_raw[-1]["order_id"])
+            self.orders_raw.extend(self._parse_orders())
+            print(f"\r Retrieved {len(self.orders_raw):>4} orders", end="")
         print()
-        self.orders = [self._post_process(order) for order in self.orders][:limit]
+        self.orders_processed = [self._post_process(order) for order in self.orders_raw]
 
     def fetchall(self):
         self.fetch(limit=None)
@@ -74,7 +83,6 @@ class Swiggy:
 
         if order["offers_data"].__class__ is str and order["offers_data"] != "":
             order["offers_data"] = literal_eval(order["offers_data"])
-
         if order.get("rating_meta", None) is None:
             order["rating_meta"] = {
                 "restaurant_rating": {"rating": 0},
@@ -82,106 +90,86 @@ class Swiggy:
             }
         else:
             order["rating_meta"].pop("asset_id", None)
-
-        for attr in order_useless_attrs:
-            order.pop(attr, None)
-
-        for item in order["order_items"]:
-            for attr in order_item_useless_attrs:
-                item.pop(attr, None)
-            for variant in item["variants"]:
-                variant.pop("variant_tax_charges", None)
-            for addon in item["addons"]:
-                addon.pop("addon_tax_charges", None)
-
-        order["delivery_address"].pop("is_verified", None)
-        order["delivery_address"].pop("reverse_geo_code_failed", None)
-
-        # order.setdefault("order_notes", None)
-        # order.setdefault("base_order_id", None)
-        # order.setdefault("cloning_reason", None)
-        # order.setdefault("cancellation_source", None)
-        # order.setdefault("is_bank_discount", None)
-
-        for attr in list(Order.__annotations__):
+        for attr in attrs["order"] + attrs["restaurant"] + attrs["delivery_address"]:
             order.setdefault(attr, None)
-
+        for attr in attrs["offers_data"]:
+            for offer in order["offers_data"]:
+                offer.setdefault(attr, None)
+        for attr in attrs["payment"]:
+            for payment in order["payment_transactions"]:
+                payment.setdefault(attr, None)
+        for attr in attrs["order_items"]:
+            for item in order["order_items"]:
+                item.setdefault(attr, None)
         return order
 
+    @cache
+    def order_by_id(self, order_id: int, dclass: bool = True) -> dict:
+        for order_ in self.orders_processed:
+            if order_["order_id"] == order_id:
+                return self.order(order_) if dclass else order_
+        return dict()
+
+    def order(self, order_id: Optional[int] = None):
+        if order_id is None:
+            return [convert.order(order) for order in self.orders_processed]
+        return convert.order(self.order_by_id(order_id))
+
+    def orderitem(self, order_id: Optional[int] = None):
+        if order_id is None:
+            return list(
+                chain.from_iterable(
+                    [convert.orderitem(order) for order in self.orders_processed]
+                )
+            )
+        return convert.orderitem(self.order_by_id(order_id))
+
+    def restaurant(self, order_id: Optional[int] = None):
+        if order_id is None:
+            return [convert.restaurant(order) for order in self.orders_processed]
+        return convert.restaurant(self.order_by_id(order_id))
+
+    def deliveryaddress(self, order_id: Optional[int] = None):
+        if order_id is None:
+            return [convert.deliveryaddress(order) for order in self.orders_processed]
+        return convert.deliveryaddress(self.order_by_id(order_id))
+
+    def payment(self, order_id: Optional[int] = None):
+        if order_id is None:
+            return list(
+                chain.from_iterable(
+                    [convert.payment(order) for order in self.orders_processed]
+                )
+            )
+        return convert.payment(self.order_by_id(order_id))
+
+    def offer(self, order_id: Optional[int] = None):
+        if order_id is None:
+            return list(
+                chain.from_iterable(
+                    [convert.offers_data(order) for order in self.orders_processed]
+                )
+            )
+        return convert.offers_data(self.order_by_id(order_id))
+
     def save(self, fname: str = "orders.json", **kwargs: dict):
+        obj = {"raw": self.orders_raw, "processed": self.orders_processed}
         with open(fname, "w", encoding="utf-8") as f:
-            dump(self.orders, f, **kwargs)
+            dump(obj, f, **kwargs)
 
     def load(self, fname: str = "orders.json", **kwargs: dict):
         with open(fname, "r", encoding="utf-8") as f:
-            self.orders = load(f, **kwargs)
+            obj = load(f, **kwargs)
+        self.orders_raw = obj["raw"]
+        self.orders_processed = obj["processed"]
 
     def saveb(self, fname: str = "orders.msgpack", **kwargs: dict):
+        obj = {"raw": self.orders_raw, "processes": self.orders_processed}
         with open(fname, "wb") as f:
-            pack(self.orders, f, **kwargs)
+            pack(obj, f, **kwargs)
 
     def loadb(self, fname: str = "orders.msgpack", **kwargs: dict):
         with open(fname, "rb") as f:
-            self.orders = unpack(f, **kwargs)
-
-    def deliveryaddress(order: dict):
-        return DeliveryAddress(**order["delivery_address"])
-
-    def restaurant(order: dict):
-        attrs = list(Restaurant.__annotations__)
-        attrs.remove("customer_distance")
-        attrs.remove("coordinates")
-        attrs = ["restaurant_" + attr for attr in attrs]
-        return Restaurant(
-            **{attr.replace("restaurant_", ""): order[attr] for attr in attrs},
-            coordinates=order["restaurant_lat_lng"],
-            customer_distance=(
-                float(order["restaurant_customer_distance"]),
-                order["delivery_address"]["id"],
-            ),
-        )
-
-    def offers_data(order: dict) -> Optional[list[OffersData]]:
-        if order["offers_data"] == "":
-            return
-        attrs = list(OffersData.__annotations__)
-        attrs.remove("order_id")
-        attrs.remove("coupon_applied")
-        return [
-            OffersData(
-                **{attr: offer[attr] for attr in attrs},
-                order_id=order["order_id"],
-                coupon_applied=order["coupon_applied"],
-            )
-            for offer in order["offers_data"]
-        ]
-
-    def payment(order: dict) -> list[Payment]:
-        if not order["payment_transactions"]:
-            return []
-        attrs = list(Payment.__annotations__)
-        return [
-            Payment(**{attr: pay[attr] for attr in attrs})
-            for pay in order["payment_transactions"]
-        ]
-
-    def order_item(order: dict) -> list[OrderItem]:
-        attrs = list(OrderItem.__annotations__)
-        # not keys of ``order_item``
-        attrs.remove("order_id")
-        attrs.remove("restaurant_id")
-
-        for item in order["order_items"]:
-            for attr in attrs:
-                item.setdefault(attr, None)
-            if item["image_id"] is None or not item["image_id"]:
-                item["image_id"] = "swiggy_pay/SwiggyLogo"
-
-        return [
-            OrderItem(
-                **{attr: item[attr] for attr in attrs},
-                order_id=order["order_id"],
-                restaurant_id=order["restaurant_id"],
-            )
-            for item in order["order_items"]
-        ]
+            obj = unpack(f, **kwargs)
+        self.orders_raw = obj["raw"]
+        self.orders_processed = obj["processed"]
