@@ -59,7 +59,7 @@ class Swiggy:
             )
         if limit % 10 != 0:
             limit = round(limit, -1) + 10
-            warn(f"Limit must be a multiple of 10. Fetching {limit}(max) orders.")
+            warn(f"Limit must be a multiple of 10. Fetching {limit} (max) orders.")
         self.orders_r = []
         self._send_req(order_id=None)
         self.orders_r.extend(self._parse_orders())

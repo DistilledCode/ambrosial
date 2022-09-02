@@ -64,7 +64,7 @@ class Order:
     post_status: str
     order_type: str
     order_placement_status: str
-    sla_time: str
+    sla_time: int
     delivery_boy: dict[str, Optional[Union[int, str]]]
     restaurant: Restaurant
     payment_method: str
@@ -103,8 +103,8 @@ class Order:
     delayed_placing: int
     is_long_distance: bool
     on_time: bool
-    sla_difference: str
-    actual_sla_time: str
+    sla_difference: int
+    actual_sla_time: int
     payment_txn_status: str
     rain_mode: str
     is_super_long_distance: bool
@@ -160,6 +160,11 @@ class Order:
             key: float(self.cust_lat_lng[key]) for key in self.cust_lat_lng
         }
         self.order_tags = tuple(self.order_tags)
+        # on_time should be True if sla_difference is positive
+        self.sla_time = int(self.sla_time)
+        self.actual_sla_time = int(self.actual_sla_time)
+        self.sla_difference = int(self.sla_difference)
+        self.on_time = True if self.sla_difference >= 0 else False
 
     def __eq__(self, other):
         return self.order_id == other.order_id
