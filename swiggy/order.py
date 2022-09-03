@@ -7,7 +7,7 @@ from swiggy.restaurant import Restaurant
 
 
 @dataclass(kw_only=True, frozen=True)
-class OffersData:
+class Offer:
     order_id: int
     id: str
     coupon_applied: str
@@ -57,7 +57,7 @@ class Order:
     order_items: list[OrderItem] = field(default_factory=list)
     charges: dict[str, str]
     is_coupon_applied: bool
-    offers_data: list[OffersData] = field(default_factory=list)
+    offers_data: list[Offer] = field(default_factory=list)
     order_time: str
     customer_id: str
     order_status: str

@@ -192,11 +192,9 @@ class Swiggy:
     def offer(self, id: Optional[int] = None):
         if id is None:
             return list(
-                chain.from_iterable(
-                    [convert.offers_data(order) for order in self.orders_p]
-                )
+                chain.from_iterable([convert.offer(order) for order in self.orders_p])
             )
-        return convert.offers_data(self._order_by_id("offer", id))
+        return convert.offer(self._order_by_id("offer", id))
 
     def save(self, fname: str = "orders.json", **kwargs: dict):
         obj = {"raw": self.orders_r, "processed": self.orders_p}

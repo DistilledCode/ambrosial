@@ -1,5 +1,5 @@
 from swiggy.address import DeliveryAddress
-from swiggy.order import OffersData, Order, Payment
+from swiggy.order import Offer, Order, Payment
 from swiggy.orderitem import OrderItem
 from swiggy.restaurant import Restaurant
 
@@ -8,7 +8,7 @@ attrs = {
     "order_items": list(OrderItem.__annotations__),
     "restaurant": ["restaurant_" + attr for attr in list(Restaurant.__annotations__)],
     "delivery_address": list(DeliveryAddress.__annotations__),
-    "offers_data": list(OffersData.__annotations__),
+    "offers_data": list(Offer.__annotations__),
     "payment": list(Payment.__annotations__),
 }
 
@@ -31,7 +31,7 @@ def order(_order: dict) -> list[Order]:
         restaurant=restaurant(_order),
         payment_transaction=payment(_order),
         order_items=orderitem(_order),
-        offers_data=offers_data(_order),
+        offers_data=offer(_order),
         delivery_address=deliveryaddress(_order),
     )
 
@@ -80,11 +80,11 @@ def payment(order: dict) -> list[Payment]:
     ]
 
 
-def offers_data(order: dict) -> list[OffersData]:
+def offer(order: dict) -> list[Offer]:
     if order["offers_data"] == "":
         return []
     return [
-        OffersData(
+        Offer(
             **{attr: offer[attr] for attr in attrs["offers_data"]},
             order_id=order["order_id"],
             coupon_applied=order["coupon_applied"],
