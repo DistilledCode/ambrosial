@@ -1,25 +1,30 @@
+from collections import Counter
+
+from swiggy import Swiggy
 from swiggy.order import Offer, Order, Payment
 
-
-class OrdersAnalytics:
-    def __init__(self, orders: list[Order]) -> None:
-        self.orders = orders
-        pass
-
-    pass
+from analytics import SwiggyAnalytics
 
 
-class OffersAnalytics:
-    def __init__(self, offers: list[Offer]) -> None:
-        self.offers = offers
-        pass
+class OrderAnalytics(SwiggyAnalytics):
+    def __init__(self, swiggy: Swiggy = None) -> None:
+        SwiggyAnalytics.__init__(self, swiggy)
+        self.counter = Counter(self.orders)
 
     pass
 
 
-class PaymentAnalytics:
-    def __init__(self, payments: list[Payment]) -> None:
-        self.payments = payments
-        pass
+class OfferAnalytics(SwiggyAnalytics):
+    def __init__(self, swiggy: Swiggy = None) -> None:
+        SwiggyAnalytics.__init__(self, swiggy)
+        self.counter = Counter(self.offers)
+
+    pass
+
+
+class PaymentAnalytics(SwiggyAnalytics):
+    def __init__(self, swiggy: Swiggy = None) -> None:
+        SwiggyAnalytics.__init__(self, swiggy)
+        self.counter = Counter(self.payments)
 
     pass

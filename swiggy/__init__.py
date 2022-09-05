@@ -22,6 +22,7 @@ class Swiggy:
         self.json = ""
         self.response = None
         self.reason = ""
+        self.fetched = False
 
     def _send_req(self, order_id: Optional[int]):
         param = {} if order_id is None else {"order_id": order_id}
@@ -69,6 +70,7 @@ class Swiggy:
             print(f"\r Retrieved {len(self.orders_r):>4} orders", end="")
         print()
         self.orders_p = [self._post_process(deepcopy(order)) for order in self.orders_r]
+        self.fetched = True
 
     def fetchall(self):
         self.fetch(limit=None)
@@ -206,6 +208,7 @@ class Swiggy:
             obj = load(f, **kwargs)
         self.orders_r = obj["raw"]
         self.orders_p = obj["processed"]
+        self.fetched = True
 
     def saveb(self, fname: str = "orders.msgpack", **kwargs: dict):
         obj = {"raw": self.orders_r, "processed": self.orders_p}
@@ -217,3 +220,4 @@ class Swiggy:
             obj = unpack(f, **kwargs)
         self.orders_r = obj["raw"]
         self.orders_p = obj["processed"]
+        self.fetched = True
