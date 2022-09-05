@@ -27,7 +27,7 @@ class DeliveryAddress:
         self.lng = float(self.lng)
 
     def __eq__(self, other):
-        return self.id == other.id
+        return self.id == other.id and self.version == other.version
 
     def __hash__(self) -> int:
-        return hash(self.id)
+        return hash(str(self.id) + str(self.version))
