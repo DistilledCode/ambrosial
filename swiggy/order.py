@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Optional, Union
 
 from swiggy.address import DeliveryAddress
@@ -58,7 +59,7 @@ class Order:
     charges: dict[str, str]
     is_coupon_applied: bool
     offers_data: list[Offer] = field(default_factory=list)
-    order_time: str
+    order_time: datetime
     customer_id: str
     order_status: str
     post_status: str
@@ -165,6 +166,7 @@ class Order:
         self.actual_sla_time = int(self.actual_sla_time)
         self.sla_difference = int(self.sla_difference)
         self.on_time = True if self.sla_difference >= 0 else False
+        self.order_time = datetime.strptime(self.order_time, "%Y-%m-%d %H:%M:%S")
 
     def __eq__(self, other):
         return self.order_id == other.order_id

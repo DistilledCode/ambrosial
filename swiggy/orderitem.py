@@ -47,7 +47,7 @@ class OrderItem:
         for key in self.item_charges:
             self.item_charges[key] = float(self.item_charges[key])
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.item_id == other.item_id
 
     def __hash__(self) -> int:
