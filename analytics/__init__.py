@@ -9,7 +9,7 @@ class SwiggyAnalytics:
         if self.swiggy is None:
             self.swiggy = Swiggy()
             self.swiggy.fetchall()
-        if self.swiggy.fetched is False:
+        if self.swiggy._fetched is False:
             self.swiggy.fetchall()
         self.orders = self.swiggy.order()
         self.orderitems = self.swiggy.orderitem()

@@ -15,42 +15,42 @@ from swiggy.convert import attrs
 
 class Swiggy:
     def __init__(self):
-        self.url = "https://www.swiggy.com/dapi/order/all"
-        self.cookie_jar = browser_cookie3.load("www.swiggy.com")
+        self._url = "https://www.swiggy.com/dapi/order/all"
+        self._cookie_jar = browser_cookie3.load("www.swiggy.com")
         self.orders_r = []
         self.orders_p = []
-        self.json = ""
-        self.response = None
-        self.reason = ""
-        self.fetched = False
+        self._json = ""
+        self._response = None
+        self._reason = ""
+        self._fetched = False
 
     def _send_req(self, order_id: Optional[int]):
         param = {} if order_id is None else {"order_id": order_id}
-        self.response = get(self.url, cookies=self.cookie_jar, params=param)
-        self.json = self.response.json()
+        self._response = get(self._url, cookies=self._cookie_jar, params=param)
+        self._json = self._response.json()
 
     def _valid_response(self) -> bool:
-        if not self.response.status_code == 200:
-            self.reason = self.response.reason
+        if not self._response.status_code == 200:
+            self._reason = self._response.reason
             return False
-        if not self.json["statusCode"] == 0:
-            self.reason = self.json["statusMessage"]
+        if not self._json["statusCode"] == 0:
+            self._reason = self._json["statusMessage"]
             return False
-        self.reason = None
+        self._reason = None
         return True
 
     def _parse_orders(self) -> list[dict]:
         if not self._valid_response():
-            print(self.reason)
+            print(self._reason)
             quit()
-        return [order for order in self.response.json()["data"]["orders"]]
+        return [order for order in self._response.json()["data"]["orders"]]
 
     @property
     def _exhausted(self) -> bool:
         if not self._valid_response():
-            print(self.reason)
+            print(self._reason)
             quit()
-        return not bool(self.json["data"]["orders"])
+        return not bool(self._json["data"]["orders"])
 
     def fetch(self, limit: Optional[int] = 20):
         limit = 10**8 if limit is None else limit
@@ -70,7 +70,7 @@ class Swiggy:
             print(f"\r Retrieved {len(self.orders_r):>4} orders", end="")
         print()
         self.orders_p = [self._post_process(deepcopy(order)) for order in self.orders_r]
-        self.fetched = True
+        self._fetched = True
 
     def fetchall(self):
         self.fetch(limit=None)
@@ -111,7 +111,7 @@ class Swiggy:
                 item.setdefault(attr, None)
         return order
 
-    def _order_by_id(self, obj, id):
+    def _order_by_id(self, obj, id, ver=0):
         def _order():
             for order in self.orders_p:
                 if order["order_id"] == id:
@@ -133,9 +133,12 @@ class Swiggy:
 
         def _address():
             for order in self.orders_p:
-                if order["delivery_address"]["id"] == id:
+                if (
+                    order["delivery_address"]["id"] == id
+                    and order["delivery_address"]["version"] == ver
+                ):
                     return order
-            raise ValueError(f"delivery address with id = {repr(id)} doesn't exist.")
+            raise ValueError(f"Address with (id,ver) = ({id},{ver}) doesn't exist.")
 
         def _payment():
             for order in self.orders_p:
@@ -174,10 +177,13 @@ class Swiggy:
             )
         return convert.orderitem(self._order_by_id("item", id))
 
-    def restaurant(self, id: Optional[int] = None):
-        if id is None:
+    def restaurant(self, id: Optional[int] = None, ver: Optional[int] = None):
+        if id is None and ver is None:
             return [convert.restaurant(order) for order in self.orders_p]
-        return convert.restaurant(self._order_by_id("restaurant", id))
+        if id is not None and ver is not None:
+            return convert.restaurant(self._order_by_id("restaurant", id))
+        else:
+            raise KeyError("provide both id and version number for address lookup")
 
     def deliveryaddress(self, id: Optional[int] = None):
         if id is None:
@@ -208,7 +214,7 @@ class Swiggy:
             obj = load(f, **kwargs)
         self.orders_r = obj["raw"]
         self.orders_p = obj["processed"]
-        self.fetched = True
+        self._fetched = True
 
     def saveb(self, fname: str = "orders.msgpack", **kwargs: dict):
         obj = {"raw": self.orders_r, "processed": self.orders_p}
@@ -220,4 +226,4 @@ class Swiggy:
             obj = unpack(f, **kwargs)
         self.orders_r = obj["raw"]
         self.orders_p = obj["processed"]
-        self.fetched = True
+        self._fetched = True

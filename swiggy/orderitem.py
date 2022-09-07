@@ -44,6 +44,7 @@ class OrderItem:
         self.base_price = float(self.base_price)
         self.effective_item_price = float(self.effective_item_price)
         self.item_total_discount = float(self.item_total_discount)
+        self.packing_charges = float(self.packing_charges)
         for key in self.item_charges:
             self.item_charges[key] = float(self.item_charges[key])
 
@@ -53,5 +54,5 @@ class OrderItem:
     def __hash__(self) -> int:
         return hash(self.item_id)
 
-    def __str__(self) -> str:
-        return f"{self.name}"
+    # def __str__(self) -> str:
+    # return f"{self.name}"
