@@ -19,7 +19,8 @@ class AddressAnalytics(SwiggyAnalytics):
     def coordinates(self):
         return [
             {
-                "id_ver": f"{address.id}_{address.version}",
+                "id_version": f"{address.id}_{address.version}",
+                "annotation": address.annotation,
                 "latitude": address.lat,
                 "longitude": address.lng,
             }
