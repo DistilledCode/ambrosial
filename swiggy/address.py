@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 @dataclass(kw_only=True)
 class DeliveryAddress:
+    ddav: bool
     version: int
     name: str
     address: str
@@ -27,7 +28,11 @@ class DeliveryAddress:
         self.lng = float(self.lng)
 
     def __eq__(self, other):
-        return self.id == other.id and self.version == other.version
+        return (
+            self.id == other.id and self.version == other.version
+            if self.ddav
+            else self.id == other.id
+        )
 
     def __hash__(self) -> int:
         return hash(str(self.id) + str(self.version))

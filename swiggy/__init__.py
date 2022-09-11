@@ -14,7 +14,8 @@ from swiggy.convert import attrs
 
 
 class Swiggy:
-    def __init__(self):
+    def __init__(self, ddav: bool = True):
+        self.ddav = ddav
         self._url = "https://www.swiggy.com/dapi/order/all"
         self._cookie_jar = browser_cookie3.load("www.swiggy.com")
         self.orders_r = []
@@ -111,7 +112,7 @@ class Swiggy:
                 item.setdefault(attr, None)
         return order
 
-    def _order_by_id(self, obj, id, ver=0):
+    def _order_by_id(self, obj, id, ver: Optional[int] = None):
         def _order():
             for order in self.orders_p:
                 if order["order_id"] == id:
@@ -134,11 +135,16 @@ class Swiggy:
         def _address():
             for order in self.orders_p:
                 if (
-                    order["delivery_address"]["id"] == id
+                    self.ddav is True
+                    and order["delivery_address"]["id"] == id
                     and order["delivery_address"]["version"] == ver
                 ):
                     return order
-            raise ValueError(f"Address with (id,ver) = ({id},{ver}) doesn't exist.")
+                elif self.ddav is False and order["delivery_address"]["id"] == id:
+                    return order
+            raise ValueError(
+                f"Address with (id,ver) = ({id},{ver}) doesn't exist."
+            ) if self.ddav else ValueError(f"Address with id = {id} doesn't exist.")
 
         def _payment():
             for order in self.orders_p:
@@ -165,8 +171,8 @@ class Swiggy:
 
     def order(self, id: Optional[int] = None):
         if id is None:
-            return [convert.order(order) for order in self.orders_p]
-        return convert.order(self._order_by_id("order", id))
+            return [convert.order(order, self.ddav) for order in self.orders_p]
+        return convert.order(self._order_by_id("order", id), self.ddav)
 
     def orderitem(self, id: Optional[int] = None):
         if id is None:
@@ -177,18 +183,22 @@ class Swiggy:
             )
         return convert.orderitem(self._order_by_id("item", id))
 
-    def restaurant(self, id: Optional[int] = None, ver: Optional[int] = None):
-        if id is None and ver is None:
-            return [convert.restaurant(order) for order in self.orders_p]
-        if id is not None and ver is not None:
-            return convert.restaurant(self._order_by_id("restaurant", id))
-        else:
-            raise KeyError("provide both id and version number for address lookup")
-
-    def deliveryaddress(self, id: Optional[int] = None):
+    def restaurant(self, id: Optional[int] = None):
         if id is None:
-            return [convert.deliveryaddress(order) for order in self.orders_p]
-        return convert.deliveryaddress(self._order_by_id("address", id))
+            return [convert.restaurant(order) for order in self.orders_p]
+        return convert.restaurant(self._order_by_id("restaurant", id))
+
+    def deliveryaddress(self, id: Optional[int] = None, ver: Optional[int] = None):
+        if ver is not None and self.ddav is False:
+            warn(f"version number will be ignored as bool ddav is False")
+        if id is None:
+            return [
+                convert.deliveryaddress(order, self.ddav) for order in self.orders_p
+            ]
+        if ver is None and self.ddav is True:
+            raise KeyError("provide version number of address as ddav is True")
+
+        return convert.deliveryaddress(self._order_by_id("address", id, ver), self.ddav)
 
     def payment(self, id: Optional[int] = None):
         if id is None:

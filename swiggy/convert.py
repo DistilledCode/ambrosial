@@ -21,18 +21,19 @@ attrs["order_items"].remove("order_id")
 attrs["order_items"].remove("restaurant_id")
 attrs["restaurant"].remove("restaurant_customer_distance")
 attrs["restaurant"].remove("restaurant_coordinates")
+attrs["delivery_address"].remove("ddav")
 attrs["offers_data"].remove("order_id")
 attrs["offers_data"].remove("coupon_applied")
 
 
-def order(_order: dict) -> list[Order]:
+def order(_order: dict, ddav: bool) -> list[Order]:
     return Order(
         **{attr: _order[attr] for attr in attrs["order"]},
         restaurant=restaurant(_order),
         payment_transaction=payment(_order),
         order_items=orderitem(_order),
         offers_data=offer(_order),
-        delivery_address=deliveryaddress(_order),
+        delivery_address=deliveryaddress(_order, ddav),
     )
 
 
@@ -65,9 +66,10 @@ def restaurant(order: dict) -> list[Restaurant]:
     )
 
 
-def deliveryaddress(order: dict) -> list[DeliveryAddress]:
+def deliveryaddress(order: dict, ddav: bool) -> list[DeliveryAddress]:
     return DeliveryAddress(
-        **{attr: order["delivery_address"][attr] for attr in attrs["delivery_address"]}
+        ddav=ddav,
+        **{attr: order["delivery_address"][attr] for attr in attrs["delivery_address"]},
     )
 
 
