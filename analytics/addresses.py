@@ -36,7 +36,7 @@ class AddressAnalytics:
             else order.delivery_address.id
         )
 
-    def history(self):
+    def order_history(self):
         hist = defaultdict(list)
         for order in self.all_orders:
             hist[self._get_key(order)].append(
@@ -50,23 +50,19 @@ class AddressAnalytics:
     def _conv_factor(self, unit: str) -> int:
         return {"minute": 60, "hour": 3600}.get(unit, 1)
 
-    def del_time_stats(self, unit: str = "secs"):
+    def delivery_time_stats(self, unit: str = "secs"):
         del_time = defaultdict(list)
         for order in self.all_orders:
             if (dt := order.delivery_time_in_seconds) != 0:
                 del_time[self._get_key(order)].append(dt / self._conv_factor(unit))
-        return dict(
-            {
-                address: {
-                    "mean": round(st.mean(total_dt), 4),
-                    "median": round(st.median(total_dt), 4),
-                    "std_dev": round(st.stdev(total_dt), 4)
-                    if len(total_dt) > 1
-                    else None,
-                    "maximum": round(max(total_dt), 4),
-                    "minimum": round(min(total_dt), 4),
-                    "total_deliveries": len(total_dt),
-                }
-                for address, total_dt in del_time.items()
+        return {
+            address: {
+                "mean": round(st.mean(total_dt), 4),
+                "median": round(st.median(total_dt), 4),
+                "std_dev": round(st.stdev(total_dt), 4) if len(total_dt) > 1 else None,
+                "maximum": round(max(total_dt), 4),
+                "minimum": round(min(total_dt), 4),
+                "total_deliveries": len(total_dt),
             }
-        )
+            for address, total_dt in del_time.items()
+        }

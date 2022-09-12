@@ -7,3 +7,5 @@ venv-swiggy
 *.ipynb
 *.msgpack
 *.json
+zomato
+swiggy/utils.py
