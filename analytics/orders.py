@@ -10,22 +10,31 @@ class OrderAnalytics:
         self.swiggy = swiggy
         self.all_orders = self.swiggy.order()
 
-    def order_time_stats(self):
-        # TODO: Allow combinations, like Month + Year, Year + Day, etc
-        week = lambda x: x.order_time.weekday()
-        month = lambda x: x.order_time.month
-        week_ = lambda x: x.order_time.strftime("%A")
-        month_ = lambda x: x.order_time.strftime("%B")
-        return [
-            {
-                key: len(list(val))
-                for key, val in groupby(sorted(self.all_orders, key=week), week_)
-            },
-            {
-                key: len(list(val))
-                for key, val in groupby(sorted(self.all_orders, key=month), month_)
-            },
-        ]
+    def order_time_stats(self, bin: str):
+        # TODO: include an option to groupby according to custom strftime string
+        def cmp_fnc(order, chrono: bool = False):
+            bin_ = tuple(attr for attr in bin.split("+") if attr)
+            attr_mapping = {
+                "hour": order.order_time.hour,
+                "day": order.order_time.day,
+                "week": order.order_time.isoweekday(),
+                "week_": order.order_time.strftime("%A"),
+                "month": order.order_time.month,
+                "month_": order.order_time.strftime("%B"),
+                "year": order.order_time.year,
+            }
+            if any((x := attr) not in attr_mapping for attr in bin_):
+                raise KeyError(f"cannot group using key: {repr(x)}")
+
+            if chrono:
+                # else keys will be sorted in alphabetical order insteadl of chronological
+                attr_mapping["month_"] = attr_mapping["month"]
+                attr_mapping["week_"] = attr_mapping["week"]
+
+            return tuple(attr_mapping.get(attr) for attr in bin_)
+
+        chrono_sorted = sorted(self.all_orders, key=lambda x: cmp_fnc(x, chrono=True))
+        return {key: len(list(val)) for key, val in groupby(chrono_sorted, cmp_fnc)}
 
 
 class OfferAnalytics:
