@@ -14,7 +14,7 @@ from swiggy.convert import attrs
 
 
 class Swiggy:
-    def __init__(self, ddav: bool = True):
+    def __init__(self, ddav: bool = False):
         self.ddav = ddav
         self._url = "https://www.swiggy.com/dapi/order/all"
         self._cookie_jar = browser_cookie3.load("www.swiggy.com")
@@ -69,7 +69,7 @@ class Swiggy:
             self._send_req(order_id=self.orders_r[-1]["order_id"])
             self.orders_r.extend(self._parse_orders())
             print(f"\r Retrieved {len(self.orders_r):>4} orders", end="")
-        print()
+        print(f"\r [Done] Retrieved {len(self.orders_r):>4} orders")
         self.orders_p = [self._post_process(deepcopy(order)) for order in self.orders_r]
         self._fetched = True
 
@@ -185,8 +185,8 @@ class Swiggy:
 
     def restaurant(self, id: Optional[int] = None):
         if id is None:
-            return [convert.restaurant(order) for order in self.orders_p]
-        return convert.restaurant(self._order_by_id("restaurant", id))
+            return [convert.restaurant(order, self.ddav) for order in self.orders_p]
+        return convert.restaurant(self._order_by_id("restaurant", id), self.ddav)
 
     def deliveryaddress(self, id: Optional[int] = None, ver: Optional[int] = None):
         if ver is not None and self.ddav is False:

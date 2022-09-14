@@ -16,7 +16,7 @@ class Restaurant:
     area_name: str
     cuisine: tuple[str]
     coordinates: dict[str, float]
-    customer_distance: tuple[float, str]
+    customer_distance: tuple[str, float]
     new_slug: str
     cover_image: str
     taxation_type: str

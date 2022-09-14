@@ -13,7 +13,7 @@ class AddressAnalytics:
         self.all_orders = self.swiggy.order()
         self.all_addresses = self.swiggy.deliveryaddress()
 
-    def groupby(self, attr: str = None) -> dict[Union[DeliveryAddress, str], int]:
+    def group_by(self, attr: str = None) -> dict[Union[DeliveryAddress, str], int]:
         if attr is None:
             return dict(Counter(self.all_addresses).most_common())
         return dict(Counter(getattr(i, attr) for i in self.all_addresses).most_common())
@@ -51,10 +51,10 @@ class AddressAnalytics:
         return {"minute": 60, "hour": 3600}.get(unit, 1)
 
     def delivery_time_stats(self, unit: str = "secs"):
-        del_time = defaultdict(list)
+        delivery_time = defaultdict(list)
         for order in self.all_orders:
             if (dt := order.delivery_time_in_seconds) != 0:
-                del_time[self._get_key(order)].append(dt / self._conv_factor(unit))
+                delivery_time[self._get_key(order)].append(dt / self._conv_factor(unit))
         return {
             address: {
                 "mean": round(st.mean(total_dt), 4),
@@ -64,5 +64,5 @@ class AddressAnalytics:
                 "minimum": round(min(total_dt), 4),
                 "total_deliveries": len(total_dt),
             }
-            for address, total_dt in del_time.items()
+            for address, total_dt in delivery_time.items()
         }
