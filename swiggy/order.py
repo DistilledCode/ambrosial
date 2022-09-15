@@ -77,7 +77,7 @@ class Order:
     delivery_time_in_seconds: int
     order_total: int
     order_total_with_tip: float
-    net_total: float
+    # net_total: float
     item_total: float
     swiggy_money: float
     order_discount_without_freebie: float
@@ -146,7 +146,7 @@ class Order:
     cancellation_source: str
     updated_at: str
     conservative_last_mile_distance: float
-    selected_sla_option: str
+    # selected_sla_option: str
     address_changed_post_order: str
     post_order_address_change_attempted_at: int
 

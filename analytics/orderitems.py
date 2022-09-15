@@ -13,7 +13,7 @@ class OrderitemAnalytics:
         self.all_items = self.swiggy.orderitem()
         pass
 
-    def groupby(self, attr: str = None) -> dict[Union[OrderItem, str], int]:
+    def group(self, attr: str = None) -> dict[Union[OrderItem, str], int]:
         if attr is None:
             return dict(Counter(self.all_items).most_common())
         if attr == "item_charges":

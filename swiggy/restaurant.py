@@ -14,10 +14,10 @@ class Restaurant:
     city_name: str
     area_code: int
     area_name: str
-    cuisine: tuple[str]
+    cuisine: list[str]
     coordinates: dict[str, float]
     customer_distance: tuple[str, float]
-    new_slug: str
+    # new_slug: str
     cover_image: str
     taxation_type: str
     gst_category: str
@@ -25,7 +25,6 @@ class Restaurant:
     def __post_init__(self):
         _lat_lng = [float(i) for i in self.coordinates.split(",")]
         self.coordinates = dict(zip(["lat", "lng"], _lat_lng))
-        self.cuisine = tuple(self.cuisine)
         self.image = URL + self.cover_image
 
     def __eq__(self, other):

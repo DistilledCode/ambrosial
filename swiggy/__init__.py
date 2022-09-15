@@ -1,7 +1,7 @@
 from ast import literal_eval
 from copy import deepcopy
 from itertools import chain
-from json import dump, load
+from json import JSONDecodeError, dump, load
 from typing import Optional
 from warnings import warn
 
@@ -70,13 +70,16 @@ class Swiggy:
             self.orders_r.extend(self._parse_orders())
             print(f"\r Retrieved {len(self.orders_r):>4} orders", end="")
         print(f"\r [Done] Retrieved {len(self.orders_r):>4} orders")
-        self.orders_p = [self._post_process(deepcopy(order)) for order in self.orders_r]
+        self.orders_p = self._get_processed_order()
         self._fetched = True
 
     def fetchall(self):
         self.fetch(limit=None)
 
-    def _post_process(self, order: dict):
+    def _get_processed_order(self):
+        return [self._process_orders(deepcopy(order)) for order in self.orders_r]
+
+    def _process_orders(self, order: dict):
         for ind, transaction in enumerate(order["payment_transactions"]):
             pg_response = transaction["paymentMeta"]["extPGResponse"]
             if pg_response.__class__ is str and pg_response != "":
@@ -215,25 +218,43 @@ class Swiggy:
         return convert.offer(self._order_by_id("offer", id))
 
     def save(self, fname: str = "orders.json", **kwargs: dict):
-        obj = {"raw": self.orders_r, "processed": self.orders_p}
-        with open(fname, "w", encoding="utf-8") as f:
-            dump(obj, f, **kwargs)
+        curr_ids = set(order["order_id"] for order in self.orders_r)
+        try:
+            with open("data/" + fname, "r", encoding="utf-8") as f:
+                loaded = load(f)
+                loaded_ids = set(order["order_id"] for order in loaded)
+        except (JSONDecodeError, FileNotFoundError):
+            with open("data/" + fname, "w", encoding="utf-8") as f:
+                dump(self.orders_r, f, **kwargs)
+        else:
+            if diff := curr_ids.difference(loaded_ids):
+                loaded.extend([i for i in self.orders_r if i["order_id"] in diff])
+            with open("data/" + fname, "w", encoding="utf-8") as f:
+                dump(loaded, f, **kwargs)
 
     def load(self, fname: str = "orders.json", **kwargs: dict):
-        with open(fname, "r", encoding="utf-8") as f:
-            obj = load(f, **kwargs)
-        self.orders_r = obj["raw"]
-        self.orders_p = obj["processed"]
+        with open("data/" + fname, "r", encoding="utf-8") as f:
+            self.orders_r = load(f, **kwargs)
+        self.orders_p = self._get_processed_order()
         self._fetched = True
 
     def saveb(self, fname: str = "orders.msgpack", **kwargs: dict):
-        obj = {"raw": self.orders_r, "processed": self.orders_p}
-        with open(fname, "wb") as f:
-            pack(obj, f, **kwargs)
+        curr_ids = set(order["order_id"] for order in self.orders_r)
+        try:
+            with open("data/" + fname, "rb") as f:
+                loaded = unpack(f)
+                loaded_ids = set(order["order_id"] for order in loaded)
+        except (ValueError, FileNotFoundError):
+            with open("data/" + fname, "wb") as f:
+                pack(self.orders_r, f, **kwargs)
+        else:
+            if diff := curr_ids.difference(loaded_ids):
+                loaded.extend([i for i in self.orders_r if i["order_id"] in diff])
+            with open("data/" + fname, "wb") as f:
+                pack(self.orders_r, f, **kwargs)
 
     def loadb(self, fname: str = "orders.msgpack", **kwargs: dict):
-        with open(fname, "rb") as f:
-            obj = unpack(f, **kwargs)
-        self.orders_r = obj["raw"]
-        self.orders_p = obj["processed"]
+        with open("data/" + fname, "rb") as f:
+            self.orders_r = unpack(f, **kwargs)
+        self.orders_p = self._get_processed_order()
         self._fetched = True

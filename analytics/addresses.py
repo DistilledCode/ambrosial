@@ -13,7 +13,7 @@ class AddressAnalytics:
         self.all_orders = self.swiggy.order()
         self.all_addresses = self.swiggy.deliveryaddress()
 
-    def group_by(self, attr: str = None) -> dict[Union[DeliveryAddress, str], int]:
+    def group(self, attr: str = None) -> dict[Union[DeliveryAddress, str], int]:
         if attr is None:
             return dict(Counter(self.all_addresses).most_common())
         return dict(Counter(getattr(i, attr) for i in self.all_addresses).most_common())
