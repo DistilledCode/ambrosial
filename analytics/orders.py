@@ -1,4 +1,5 @@
 from collections import Counter
+from copy import deepcopy
 from itertools import groupby
 
 from swiggy import Swiggy
@@ -10,7 +11,7 @@ class OrderAnalytics:
         self.swiggy = swiggy
         self.all_orders = self.swiggy.order()
 
-    def group_by(self, attr: str):
+    def group(self, attr: str):
         attrs = [i for i, j in Order.__annotations__.items() if j.__hash__ is not None]
         if attr not in list(Order.__annotations__):
             raise TypeError(f"type object 'Order' has no attribute {repr(attr)}")
@@ -39,7 +40,7 @@ class OrderAnalytics:
 
         return tuple(attr_mapping.get(attr) for attr in bin_)
 
-    def slot_amount(self, bins: str = "year+month_+day"):
+    def slot_amount(self, bins: str = "year+month_"):
         chrono_binned = sorted(
             self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True)
         )
@@ -48,7 +49,7 @@ class OrderAnalytics:
             for key, val in groupby(chrono_binned, lambda x: self._cmp(x, bins))
         }
 
-    def slot_orders(self, bins: str = "year+month_+day"):
+    def slot_orders(self, bins: str = "year+month_"):
         chrono_binned = sorted(
             self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True)
         )
@@ -57,8 +58,77 @@ class OrderAnalytics:
             for key, val in groupby(chrono_binned, lambda x: self._cmp(x, bins))
         }
 
-    def slot_punctuality(self):
-        pass
+    def slot_punctuality(self, bins: str = "year+month_"):
+        chrono_binned = sorted(
+            self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True)
+        )
+        punctuality_dict = dict()
+        for key, orders in groupby(chrono_binned, lambda x: self._cmp(x, bins)):
+            # values of groupby() are exhausted once iterated over. thus making a copy
+            orders_ = list(orders)
+            punctuality_dict[" ".join(str(i) for i in key)] = {
+                "on_time": sum(
+                    1
+                    for order in orders_
+                    if not order.mCancellationTime and order.on_time is True
+                ),
+                "late": sum(
+                    1
+                    for order in orders_
+                    if not order.mCancellationTime and order.on_time is False
+                ),
+                "max_delivery_time": max(
+                    orders_, key=lambda x: x.actual_sla_time
+                ).actual_sla_time,
+                "min_delivery_time": min(
+                    orders_,
+                    key=lambda x: (x.mCancellationTime, x.actual_sla_time),
+                ).actual_sla_time,
+            }
+        return punctuality_dict
+
+    def slot_distance(self, bins: str = "year+month_"):
+        chrono_binned = sorted(
+            self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True)
+        )
+        distance_dict = dict()
+        for key, orders in groupby(chrono_binned, lambda x: self._cmp(x, bins)):
+            # values of groupby() are exhausted once iterated over. thus making a copy
+            orders_ = list(orders)
+            dist_travelled = round(
+                sum(
+                    order.restaurant.customer_distance[1]
+                    for order in orders_
+                    if not order.mCancellationTime
+                ),
+                4,
+            )
+            orders_placed = sum(1 for order in orders_ if not order.mCancellationTime)
+            distance_dict[" ".join(str(i) for i in key)] = {
+                "distance_covered": dist_travelled,
+                "orders_placed": orders_placed,
+                "distance_cov_per_order": round(dist_travelled / orders_placed, 4),
+            }
+        return distance_dict
+
+    def slot_furthest_order(self, bins: str = "week_"):
+        chrono_binned = sorted(
+            self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True)
+        )
+        furthest_dict = dict()
+        for key, orders in groupby(chrono_binned, lambda x: self._cmp(x, bins)):
+            orders_ = list(orders)
+            furthest = max(orders_, key=lambda x: x.restaurant.customer_distance[1])
+            f_rest = furthest.restaurant
+            furthest_dict[" ".join(str(i) for i in key)] = {
+                "distance_covered": furthest.restaurant.customer_distance[1],
+                "ordered from": f"{f_rest.name}, {f_rest.area_name}, {f_rest.city_name}",
+                "items": [item.name for item in furthest.order_items],
+                "delivered_by": furthest.delivery_boy["name"],
+                "time_taken": f"{furthest.delivery_time_in_seconds/60:.2f} mins",
+                "was_on_time": furthest.on_time,
+            }
+        return furthest_dict
 
 
 class OfferAnalytics:
