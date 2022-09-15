@@ -2,6 +2,7 @@ from ast import literal_eval
 from copy import deepcopy
 from itertools import chain
 from json import JSONDecodeError, dump, load
+from pathlib import Path
 from typing import Optional
 from warnings import warn
 
@@ -24,6 +25,12 @@ class Swiggy:
         self._response = None
         self._reason = ""
         self._fetched = False
+        self._create_path()
+
+    def _create_path(self):
+        path = Path(__file__).resolve().parents[1] / "data"
+        if path.exists() is False:
+            path.mkdir(parents=True, exist_ok=True)
 
     def _send_req(self, order_id: Optional[int]):
         param = {} if order_id is None else {"order_id": order_id}
