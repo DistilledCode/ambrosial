@@ -84,3 +84,18 @@ class OrderitemAnalytics:
                 ],
             },
         }
+
+    def search_item(self, item: str, exact: bool = True):
+        return (
+            [
+                order_item
+                for order_item in self.all_items
+                if item.lower() == order_item.name.lower()
+            ]
+            if exact
+            else [
+                order_item
+                for order_item in self.all_items
+                if item.lower() in order_item.name.lower()
+            ]
+        )

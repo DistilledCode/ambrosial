@@ -1,5 +1,4 @@
 from collections import Counter
-from copy import deepcopy
 from itertools import groupby
 
 from swiggy import Swiggy
@@ -40,7 +39,7 @@ class OrderAnalytics:
 
         return tuple(attr_mapping.get(attr) for attr in bin_)
 
-    def slot_amount(self, bins: str = "year+month_"):
+    def tseries_amount(self, bins: str = "year+month_"):
         chrono_binned = sorted(
             self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True)
         )
@@ -49,7 +48,7 @@ class OrderAnalytics:
             for key, val in groupby(chrono_binned, lambda x: self._cmp(x, bins))
         }
 
-    def slot_orders(self, bins: str = "year+month_"):
+    def tseries_orders(self, bins: str = "year+month_"):
         chrono_binned = sorted(
             self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True)
         )
@@ -58,7 +57,7 @@ class OrderAnalytics:
             for key, val in groupby(chrono_binned, lambda x: self._cmp(x, bins))
         }
 
-    def slot_punctuality(self, bins: str = "year+month_"):
+    def tseries_punctuality(self, bins: str = "year+month_"):
         chrono_binned = sorted(
             self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True)
         )
@@ -87,7 +86,7 @@ class OrderAnalytics:
             }
         return punctuality_dict
 
-    def slot_distance(self, bins: str = "year+month_"):
+    def tseries_distance(self, bins: str = "year+month_"):
         chrono_binned = sorted(
             self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True)
         )
@@ -111,7 +110,7 @@ class OrderAnalytics:
             }
         return distance_dict
 
-    def slot_furthest_order(self, bins: str = "week_"):
+    def tseries_furthest_order(self, bins: str = "week_"):
         chrono_binned = sorted(
             self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True)
         )
