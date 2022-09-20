@@ -8,7 +8,7 @@ from warnings import warn
 
 import browser_cookie3
 from msgpack import pack, unpack
-from requests import get
+from requests import HTTPError, get
 
 import swiggy.convert as convert
 from swiggy.convert import attrs
@@ -17,48 +17,59 @@ from swiggy.convert import attrs
 class Swiggy:
     def __init__(self, ddav: bool = False):
         self.ddav = ddav
-        self._url = "https://www.swiggy.com/dapi/order/all"
+        self._o_url = "https://www.swiggy.com/dapi/order/all"
+        self._p_url = "https://www.swiggy.com/mapi/profile/info"
         self._cookie_jar = browser_cookie3.load("www.swiggy.com")
         self.orders_r = []
         self.orders_p = []
-        self._json = ""
         self._response = None
-        self._reason = ""
+        self._resp_json = dict()
+        self._invalid_reason = ""
+        self._customer_info = dict()
         self._fetched = False
-        self._create_path()
+        self._create_save_path()
 
-    def _create_path(self):
+    def _create_save_path(self):
         path = Path(__file__).resolve().parents[1] / "data"
         if path.exists() is False:
             path.mkdir(parents=True, exist_ok=True)
 
+    def account_info(self):
+        if self._customer_info:
+            return self._customer_info
+        self._response = get(self._p_url, cookies=self._cookie_jar)
+        self._resp_json = self._response.json()
+        self._validate_response()
+        data = self._resp_json["data"]
+        self._customer_info = {
+            "customer_id": data["customer_id"],
+            "name": data["name"],
+            "mobile": data["mobile"],
+            "email": data["email"],
+            "emailVerified": data["emailVerified"],
+            "super_status": data["optional_map"]["IS_SUPER"]["value"]["superStatus"],
+            "user_registered": data["user_registered"],
+        }
+        return self._customer_info
+
     def _send_req(self, order_id: Optional[int]):
         param = {} if order_id is None else {"order_id": order_id}
-        self._response = get(self._url, cookies=self._cookie_jar, params=param)
-        self._json = self._response.json()
+        self._response = get(self._ourl, cookies=self._cookie_jar, params=param)
+        self._resp_json = self._response.json()
 
-    def _valid_response(self) -> bool:
-        if not self._response.status_code == 200:
-            self._reason = self._response.reason
-            return False
-        if not self._json["statusCode"] == 0:
-            self._reason = self._json["statusMessage"]
-            return False
-        self._reason = None
-        return True
+    def _validate_response(self) -> None:
+        self._response.raise_for_status()
+        if not self._resp_json["statusCode"] == 0:
+            raise HTTPError(f"Bad Response: {self._resp_json['statusMessage']}")
 
     def _parse_orders(self) -> list[dict]:
-        if not self._valid_response():
-            print(self._reason)
-            quit()
+        self._validate_response()
         return [order for order in self._response.json()["data"]["orders"]]
 
     @property
     def _exhausted(self) -> bool:
-        if not self._valid_response():
-            print(self._reason)
-            quit()
-        return not bool(self._json["data"]["orders"])
+        self._validate_response()
+        return not bool(self._resp_json["data"]["orders"])
 
     def fetch(self, limit: Optional[int] = 20):
         limit = 10**8 if limit is None else limit
