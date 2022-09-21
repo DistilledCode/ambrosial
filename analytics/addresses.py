@@ -3,7 +3,7 @@ from collections import Counter, defaultdict
 from typing import Union
 
 from swiggy import Swiggy
-from swiggy.address import DeliveryAddress
+from swiggy.address import Address
 from swiggy.order import Order
 
 
@@ -11,9 +11,9 @@ class AddressAnalytics:
     def __init__(self, swiggy: Swiggy) -> None:
         self.swiggy = swiggy
         self.all_orders = self.swiggy.order()
-        self.all_addresses = self.swiggy.deliveryaddress()
+        self.all_addresses = self.swiggy.address()
 
-    def group(self, attr: str = None) -> dict[Union[DeliveryAddress, str], int]:
+    def group(self, attr: str = None) -> dict[Union[Address, str], int]:
         if attr is None:
             return dict(Counter(self.all_addresses).most_common())
         return dict(Counter(getattr(i, attr) for i in self.all_addresses).most_common())
@@ -31,9 +31,9 @@ class AddressAnalytics:
 
     def _get_key(self, order: Order):
         return (
-            f"{order.delivery_address.id}_{order.delivery_address.version}"
+            f"{order.address.id}_{order.address.version}"
             if self.swiggy.ddav
-            else order.delivery_address.id
+            else order.address.id
         )
 
     def order_history(self):

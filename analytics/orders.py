@@ -122,7 +122,7 @@ class OrderAnalytics:
             furthest_dict[" ".join(str(i) for i in key)] = {
                 "distance_covered": furthest.restaurant.customer_distance[1],
                 "ordered from": f"{f_rest.name}, {f_rest.area_name}, {f_rest.city_name}",
-                "items": [item.name for item in furthest.order_items],
+                "items": [item.name for item in furthest.items],
                 "delivered_by": furthest.delivery_boy["name"],
                 "time_taken": f"{furthest.delivery_time_in_seconds/60:.2f} mins",
                 "was_on_time": furthest.on_time,

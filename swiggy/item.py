@@ -1,11 +1,10 @@
 from dataclasses import dataclass, field
-from typing import Union
 
 URL = "https://res.cloudinary.com/swiggy/image/upload/"
 
 
 @dataclass(kw_only=True, frozen=False, order=True)
-class OrderItem:
+class Item:
     rewardType: str
     item_key: str
     has_variantv2: bool
@@ -14,7 +13,7 @@ class OrderItem:
     item_id: int
     external_item_id: str
     name: str
-    is_veg: bool  # 1 (True) or 0 (False)
+    is_veg: bool
     variants: list[dict] = field(default_factory=list)
     addons: list[dict] = field(default_factory=list)
     image_id: str
@@ -27,7 +26,7 @@ class OrderItem:
     effective_item_price: float
     packing_charges: float
     category_details: dict[str, str]
-    item_charges: Union[dict[str, float], dict[str, int]]
+    item_charges: dict[str, float]
     item_total_discount: float
     single_variant: bool
 
@@ -53,6 +52,3 @@ class OrderItem:
 
     def __hash__(self) -> int:
         return hash(self.item_id)
-
-    # def __str__(self) -> str:
-    # return f"{self.name}"

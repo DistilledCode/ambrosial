@@ -1,13 +1,13 @@
-from swiggy.address import DeliveryAddress
+from swiggy.address import Address
+from swiggy.item import Item
 from swiggy.order import Offer, Order, Payment
-from swiggy.orderitem import OrderItem
 from swiggy.restaurant import Restaurant
 
 attrs = {
     "order": list(Order.__annotations__),
-    "order_items": list(OrderItem.__annotations__),
+    "items": list(Item.__annotations__),
     "restaurant": ["restaurant_" + attr for attr in list(Restaurant.__annotations__)],
-    "delivery_address": list(DeliveryAddress.__annotations__),
+    "address": list(Address.__annotations__),
     "offers_data": list(Offer.__annotations__),
     "payment": list(Payment.__annotations__),
 }
@@ -15,13 +15,13 @@ attrs = {
 attrs["order"].remove("restaurant")
 attrs["order"].remove("payment_transaction")
 attrs["order"].remove("offers_data")
-attrs["order"].remove("order_items")
-attrs["order"].remove("delivery_address")
-attrs["order_items"].remove("order_id")
-attrs["order_items"].remove("restaurant_id")
+attrs["order"].remove("items")
+attrs["order"].remove("address")
+attrs["items"].remove("order_id")
+attrs["items"].remove("restaurant_id")
 attrs["restaurant"].remove("restaurant_customer_distance")
 attrs["restaurant"].remove("restaurant_coordinates")
-attrs["delivery_address"].remove("ddav")
+attrs["address"].remove("ddav")
 attrs["offers_data"].remove("order_id")
 attrs["offers_data"].remove("coupon_applied")
 
@@ -31,21 +31,21 @@ def order(_order: dict, ddav: bool) -> list[Order]:
         **{attr: _order[attr] for attr in attrs["order"]},
         restaurant=restaurant(_order, ddav),
         payment_transaction=payment(_order),
-        order_items=orderitem(_order),
+        items=item(_order),
         offers_data=offer(_order),
-        delivery_address=deliveryaddress(_order, ddav),
+        address=address(_order, ddav),
     )
 
 
-def orderitem(order: dict) -> list[OrderItem]:
+def item(order: dict) -> list[Item]:
     for item in order["order_items"]:
-        for attr in attrs["order_items"]:
+        for attr in attrs["items"]:
             item.setdefault(attr, None)
         if item["image_id"] is None or not item["image_id"]:
             item["image_id"] = "swiggy_pay/SwiggyLogo"
     return [
-        OrderItem(
-            **{attr: item[attr] for attr in attrs["order_items"]},
+        Item(
+            **{attr: item[attr] for attr in attrs["items"]},
             order_id=order["order_id"],
             restaurant_id=order["restaurant_id"],
         )
@@ -68,10 +68,10 @@ def restaurant(order: dict, ddav: bool) -> list[Restaurant]:
     )
 
 
-def deliveryaddress(order: dict, ddav: bool) -> list[DeliveryAddress]:
-    return DeliveryAddress(
+def address(order: dict, ddav: bool) -> list[Address]:
+    return Address(
         ddav=ddav,
-        **{attr: order["delivery_address"][attr] for attr in attrs["delivery_address"]},
+        **{attr: order["delivery_address"][attr] for attr in attrs["address"]},
     )
 
 

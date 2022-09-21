@@ -9,3 +9,4 @@ venv-swiggy
 *.json
 zomato
 swiggy/utils.py
+future

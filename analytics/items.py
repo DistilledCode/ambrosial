@@ -4,16 +4,16 @@ from statistics import mean
 from typing import Optional, Union
 
 from swiggy import Swiggy
-from swiggy.orderitem import OrderItem
+from swiggy.item import Item
 
 
-class OrderitemAnalytics:
+class ItemAnalytics:
     def __init__(self, swiggy: Swiggy) -> None:
         self.swiggy = swiggy
-        self.all_items = self.swiggy.orderitem()
+        self.all_items = self.swiggy.item()
         pass
 
-    def group(self, attr: str = None) -> dict[Union[OrderItem, str], int]:
+    def group(self, attr: str = None) -> dict[Union[Item, str], int]:
         if attr is None:
             return dict(Counter(self.all_items).most_common())
         if attr == "item_charges":
@@ -85,17 +85,9 @@ class OrderitemAnalytics:
             },
         }
 
-    def search_item(self, item: str, exact: bool = True):
+    def search_item(self, name: str, exact: bool = True):
         return (
-            [
-                order_item
-                for order_item in self.all_items
-                if item.lower() == order_item.name.lower()
-            ]
+            [item for item in self.all_items if name.lower() == item.name.lower()]
             if exact
-            else [
-                order_item
-                for order_item in self.all_items
-                if item.lower() in order_item.name.lower()
-            ]
+            else [item for item in self.all_items if name.lower() in item.name.lower()]
         )

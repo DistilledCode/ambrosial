@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Optional, Union
 
-from swiggy.address import DeliveryAddress
-from swiggy.orderitem import OrderItem
+from swiggy.address import Address
+from swiggy.item import Item
 from swiggy.restaurant import Restaurant
 
 
@@ -54,8 +54,8 @@ class Payment:
 class Order:
     tipDetails: dict[str, Any]
     order_id: int
-    delivery_address: DeliveryAddress
-    order_items: list[OrderItem] = field(default_factory=list)
+    address: Address
+    items: list[Item] = field(default_factory=list)
     charges: dict[str, str]
     is_coupon_applied: bool
     offers_data: list[Offer] = field(default_factory=list)

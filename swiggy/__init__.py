@@ -29,6 +29,9 @@ class Swiggy:
         self._fetched = False
         self._create_save_path()
 
+    def __repr__(self) -> str:
+        return f"Swiggy(ddav = {self.ddav})"
+
     def _create_save_path(self):
         path = Path(__file__).resolve().parents[1] / "data"
         if path.exists() is False:
@@ -120,7 +123,7 @@ class Swiggy:
             order.setdefault(attr, None)
         for attr in attrs["restaurant"]:
             order.setdefault(attr, None)
-        for attr in attrs["delivery_address"]:
+        for attr in attrs["address"]:
             order["delivery_address"].setdefault(attr, None)
         for attr in attrs["offers_data"]:
             for offer in order["offers_data"]:
@@ -128,7 +131,7 @@ class Swiggy:
         for attr in attrs["payment"]:
             for payment in order["payment_transactions"]:
                 payment.setdefault(attr, None)
-        for attr in attrs["order_items"]:
+        for attr in attrs["items"]:
             for item in order["order_items"]:
                 item.setdefault(attr, None)
         return order
@@ -140,7 +143,7 @@ class Swiggy:
                     return order
             raise ValueError(f"order with id = {repr(id)} doesn't exist.")
 
-        def _order_item():
+        def _item():
             for order in self.orders_p:
                 for item in order["order_items"]:
                     if item["item_id"] == id:
@@ -178,11 +181,11 @@ class Swiggy:
                 for offer in order["offers_data"]:
                     if offer["id"] == id:
                         return order
-            raise ValueError(f"delivery address with id = {repr(id)} doesn't exist.")
+            raise ValueError(f"Address with id = {repr(id)} doesn't exist.")
 
         obj_dict = {
             "order": _order,
-            "item": _order_item,
+            "item": _item,
             "restaurant": _restaurant,
             "address": _address,
             "payment": _payment,
@@ -195,31 +198,27 @@ class Swiggy:
             return [convert.order(order, self.ddav) for order in self.orders_p]
         return convert.order(self._order_by_id("order", id), self.ddav)
 
-    def orderitem(self, id: Optional[int] = None):
+    def item(self, id: Optional[int] = None):
         if id is None:
             return list(
-                chain.from_iterable(
-                    [convert.orderitem(order) for order in self.orders_p]
-                )
+                chain.from_iterable([convert.item(order) for order in self.orders_p])
             )
-        return convert.orderitem(self._order_by_id("item", id))
+        return convert.item(self._order_by_id("item", id))
 
     def restaurant(self, id: Optional[int] = None):
         if id is None:
             return [convert.restaurant(order, self.ddav) for order in self.orders_p]
         return convert.restaurant(self._order_by_id("restaurant", id), self.ddav)
 
-    def deliveryaddress(self, id: Optional[int] = None, ver: Optional[int] = None):
+    def address(self, id: Optional[int] = None, ver: Optional[int] = None):
         if ver is not None and self.ddav is False:
-            warn(f"version number will be ignored as bool ddav is False")
+            warn(f"version number will be ignored as ddav is False")
         if id is None:
-            return [
-                convert.deliveryaddress(order, self.ddav) for order in self.orders_p
-            ]
+            return [convert.address(order, self.ddav) for order in self.orders_p]
         if ver is None and self.ddav is True:
             raise KeyError("provide version number of address as ddav is True")
 
-        return convert.deliveryaddress(self._order_by_id("address", id, ver), self.ddav)
+        return convert.address(self._order_by_id("address", id, ver), self.ddav)
 
     def payment(self, id: Optional[int] = None):
         if id is None:

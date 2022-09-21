@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass(kw_only=True)
-class DeliveryAddress:
+class Address:
     ddav: bool
     version: int
     name: str
