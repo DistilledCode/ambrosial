@@ -10,7 +10,6 @@ from swiggy.restaurant import Restaurant
 @dataclass(kw_only=True, frozen=True)
 class Offer:
     order_id: int
-    id: str
     coupon_applied: str
     super_type: str
     total_offer_discount: float
@@ -19,10 +18,10 @@ class Offer:
     description: str
 
     def __eq__(self, other: object) -> bool:
-        return self.id == other.id
+        return self.order_id == other.order_id
 
-    def __hash__(self) -> int:
-        return hash(self.id)
+    # def __hash__(self) -> int:
+    #     return hash(self.id)
 
 
 @dataclass(kw_only=True)
