@@ -59,12 +59,14 @@ class ItemAnalytics:
         self._validate_id(item_id)
         instances = [item for item in self.all_items if item.item_id == item_id]
         return {
-            "tot_quantity": sum(i.quantity for i in instances),
+            "total_quantity": sum(i.quantity for i in instances),
             "avg_base_price": round(mean(i.base_price for i in instances), 3),
-            "tot_mrp": round(sum(i.subtotal for i in instances), 3),
-            "tot_discount": round(sum(i.item_total_discount for i in instances), 3),
-            "tot_actual_cost": round(sum(i.effective_item_price for i in instances), 3),
-            "tot_tax": round(sum(sum(i.item_charges.values()) for i in instances), 3),
+            "total_mrp": round(sum(i.subtotal for i in instances), 3),
+            "total_discount": round(sum(i.item_total_discount for i in instances), 3),
+            "total_actual_cost": round(
+                sum(i.effective_item_price for i in instances), 3
+            ),
+            "total_tax": round(sum(sum(i.item_charges.values()) for i in instances), 3),
             "avg_actual_cost": round(
                 mean(i.effective_item_price for i in instances), 3
             ),

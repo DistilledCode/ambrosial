@@ -24,7 +24,7 @@ class OrderAnalytics:
 
     def _cmp(self, order: Order, bins: str, chrono: bool = False):
         # TODO: include an option to groupby according to custom strftime string
-        bin_ = tuple(attr for attr in bins.split("+") if attr)
+        bin_ = set(attr for attr in bins.split("+") if attr)
         attr_mapping = {
             "hour": order.order_time.hour,
             "day": order.order_time.day,
@@ -149,46 +149,47 @@ class OfferAnalytics:
         return dict(Counter(getattr(i, attr) for i in self.all_offers).most_common())
 
     def statistics(self):
-        _disc_types = ("swiggy_discount", "store_discount", "alliance_discount")
-        _discounts = [offer.total_offer_discount for offer in self.all_offers]
-        _sorted_offers = sorted(self.all_offers, key=lambda x: x.total_offer_discount)
-        _min_discount = _sorted_offers[0]
-        _max_discount = _sorted_offers[-1]
+        disc_types = ("swiggy_discount", "store_discount", "alliance_discount")
+        discounts = [offer.total_offer_discount for offer in self.all_offers]
+        sorted_offers = sorted(self.all_offers, key=lambda x: x.total_offer_discount)
+        min_ = sorted_offers[0]
+        max_ = sorted_offers[-1]
         return {
-            "overall_total_discount": round(sum(_discounts), 3),
+            "total_discount": round(sum(discounts), 3),
             "discount_breakup": {
                 attr: round(sum(i.discount_share.get(attr) for i in self.all_offers), 3)
-                for attr in _disc_types
+                for attr in disc_types
             },
             "average_discount": {
-                "orders_w_offers": round(st.mean(_discounts), 3),
-                "all_orders": round(sum(_discounts) / len(self.swiggy.order()), 3),
+                "orders_w_offers": round(st.mean(discounts), 3),
+                "all_orders": round(sum(discounts) / len(self.swiggy.order()), 3),
             },
+            "std_dev_discount": round(st.stdev(discounts), 4)
+            if len(discounts) > 1
+            else None,
             "minimum_discount": {
-                "amount": round(_min_discount.total_offer_discount, 3),
-                "coupon": f"{_min_discount.coupon_applied}: {_min_discount.description}",
+                "amount": round(min_.total_offer_discount, 3),
+                "coupon": f"{min_.coupon_applied}: {min_.description}",
                 "order_id": [
                     offer.order_id
                     for offer in takewhile(
-                        lambda x: x.total_offer_discount
-                        <= _min_discount.total_offer_discount,
-                        _sorted_offers,
+                        lambda x: x.total_offer_discount <= min_.total_offer_discount,
+                        sorted_offers,
                     )
                 ],
             },
             "maximum_discount": {
-                "amount": round(_max_discount.total_offer_discount, 3),
-                "coupon": f"{_max_discount.coupon_applied}: {_max_discount.description}",
+                "amount": round(max_.total_offer_discount, 3),
+                "coupon": f"{max_.coupon_applied}: {max_.description}",
                 "order_id": [
                     offer.order_id
                     for offer in takewhile(
-                        lambda x: x.total_offer_discount
-                        >= _max_discount.total_offer_discount,
-                        reversed(_sorted_offers),
+                        lambda x: x.total_offer_discount >= max_.total_offer_discount,
+                        reversed(sorted_offers),
                     )
                 ],
             },
-            "mode_discount": st.multimode(_discounts),
+            "mode_discount": st.multimode(discounts),
         }
 
 
