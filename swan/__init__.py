@@ -1,9 +1,8 @@
+from swan.addresses import AddressAnalytics
+from swan.items import ItemAnalytics
+from swan.orders import OfferAnalytics, OrderAnalytics, PaymentAnalytics
+from swan.restaurants import RestaurantsAnalytics
 from swiggy import Swiggy
-
-from analytics.addresses import AddressAnalytics
-from analytics.items import ItemAnalytics
-from analytics.orders import OfferAnalytics, OrderAnalytics, PaymentAnalytics
-from analytics.restaurants import RestaurantsAnalytics
 
 
 class SwiggyAnalytics:

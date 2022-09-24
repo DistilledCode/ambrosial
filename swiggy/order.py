@@ -76,7 +76,6 @@ class Order:
     delivery_time_in_seconds: int
     order_total: int
     order_total_with_tip: float
-    # net_total: float
     item_total: float
     swiggy_money: float
     order_discount_without_freebie: float
@@ -93,7 +92,7 @@ class Order:
     order_restaurant_bill: float
     order_notes: Optional[str] = None
     customer_user_agent: str
-    #! coordinates from where the order was placed?
+    # ! coordinates from where the order was placed?
     billing_lat: float
     billing_lng: float
     payment_txn_id: str
@@ -145,11 +144,10 @@ class Order:
     cancellation_source: str
     updated_at: str
     conservative_last_mile_distance: float
-    # selected_sla_option: str
     address_changed_post_order: str
     post_order_address_change_attempted_at: int
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.charges = {key: float(self.charges[key]) for key in self.charges}
         self.delivered_time_in_seconds = int(self.delivered_time_in_seconds)
         self.delivery_time_in_seconds = int(self.delivery_time_in_seconds)
@@ -167,7 +165,7 @@ class Order:
         self.on_time = True if self.sla_difference >= 0 else False
         self.order_time = datetime.strptime(self.order_time, "%Y-%m-%d %H:%M:%S")
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.order_id == other.order_id
 
     def __hash__(self) -> int:

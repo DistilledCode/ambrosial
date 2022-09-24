@@ -11,9 +11,8 @@ class ItemAnalytics:
     def __init__(self, swiggy: Swiggy) -> None:
         self.swiggy = swiggy
         self.all_items = self.swiggy.item()
-        pass
 
-    def group(self, attr: str = None) -> dict[Union[Item, str], int]:
+    def group(self, attr: str = None) -> dict:
         if attr is None:
             return dict(Counter(self.all_items).most_common())
         if attr == "item_charges":
@@ -35,12 +34,7 @@ class ItemAnalytics:
             )
         return dict(Counter(getattr(i, attr) for i in self.all_items).most_common())
 
-    def _validate_id(self, item_id: str) -> bool:
-        if item_id in [item.item_id for item in self.all_items]:
-            return True
-        raise ValueError(f"order item of id = {repr(item_id)} does not exist.")
-
-    def history(self, item_id: Optional[str] = None):
+    def history(self, item_id: Optional[str] = None) -> dict:
         hist = defaultdict(list)
         for item in self.all_items:
             hist[item.item_id].append(
@@ -55,7 +49,7 @@ class ItemAnalytics:
             return hist.get(item_id)
         return dict(hist)
 
-    def summarise(self, item_id: str):
+    def summarise(self, item_id: str) -> dict:
         self._validate_id(item_id)
         instances = [item for item in self.all_items if item.item_id == item_id]
         return {
@@ -87,9 +81,14 @@ class ItemAnalytics:
             },
         }
 
-    def search_item(self, name: str, exact: bool = True):
+    def search_item(self, name: str, exact: bool = True) -> list[Item]:
         return (
             [item for item in self.all_items if name.lower() == item.name.lower()]
             if exact
             else [item for item in self.all_items if name.lower() in item.name.lower()]
         )
+
+    def _validate_id(self, item_id: str) -> bool:
+        if item_id in [item.item_id for item in self.all_items]:
+            return True
+        raise ValueError(f"order item of id = {repr(item_id)} does not exist.")

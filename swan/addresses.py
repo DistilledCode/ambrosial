@@ -18,7 +18,7 @@ class AddressAnalytics:
             return dict(Counter(self.all_addresses).most_common())
         return dict(Counter(getattr(i, attr) for i in self.all_addresses).most_common())
 
-    def coordinates(self):
+    def coordinates(self) -> list[dict]:
         return [
             {
                 "id_version": f"{address.id}_{address.version}",
@@ -29,14 +29,7 @@ class AddressAnalytics:
             for address in set(self.all_addresses)
         ]
 
-    def _get_key(self, order: Order):
-        return (
-            f"{order.address.id}_{order.address.version}"
-            if self.swiggy.ddav
-            else order.address.id
-        )
-
-    def order_history(self):
+    def order_history(self) -> dict:
         hist = defaultdict(list)
         for order in self.all_orders:
             hist[self._get_key(order)].append(
@@ -47,10 +40,7 @@ class AddressAnalytics:
             )
         return dict(hist)
 
-    def _conv_factor(self, unit: str) -> int:
-        return {"minute": 60, "hour": 3600}.get(unit, 1)
-
-    def delivery_time_stats(self, unit: str = "minute"):
+    def delivery_time_stats(self, unit: str = "minute") -> dict:
         delivery_time = defaultdict(list)
         for order in self.all_orders:
             if (dt := order.delivery_time_in_seconds) != 0:
@@ -66,3 +56,13 @@ class AddressAnalytics:
             }
             for address, total_dt in delivery_time.items()
         }
+
+    def _get_key(self, order: Order) -> str:
+        return (
+            f"{order.address.id}_{order.address.version}"
+            if self.swiggy.ddav
+            else order.address.id
+        )
+
+    def _conv_factor(self, unit: str) -> int:
+        return {"minute": 60, "hour": 3600}.get(unit, 1)

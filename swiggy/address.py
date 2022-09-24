@@ -23,11 +23,11 @@ class Address:
     voice_directions_s3_uri: str
     flat_no: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.lat = float(self.lat)
         self.lng = float(self.lng)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (
             self.id == other.id and self.version == other.version
             if self.ddav

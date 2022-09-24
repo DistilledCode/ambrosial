@@ -19,30 +19,6 @@ class OrderAnalytics:
             raise TypeError(f"attribute {repr(attr)} of 'Order' is unhashable")
         return dict(Counter(getattr(i, attr) for i in self.all_orders).most_common())
 
-    def _chronoligally_binned(self, bins: str):
-        return sorted(self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True))
-
-    def _cmp(self, order: Order, bins: str, chrono: bool = False):
-        # TODO: include an option to groupby according to custom strftime string
-        bin_ = set(attr for attr in bins.split("+") if attr)
-        attr_mapping = {
-            "hour": order.order_time.hour,
-            "day": order.order_time.day,
-            "week": order.order_time.isoweekday(),
-            "week_": order.order_time.strftime("%A"),
-            "month": order.order_time.month,
-            "month_": order.order_time.strftime("%B"),
-            "year": order.order_time.year,
-        }
-        if any((x := attr) not in attr_mapping for attr in bin_):
-            raise KeyError(f"cannot group using key: {repr(x)}")
-        if chrono:
-            # else keys will be sorted in alphabetical order instead of chronological
-            attr_mapping["month_"] = attr_mapping["month"]
-            attr_mapping["week_"] = attr_mapping["week"]
-
-        return tuple(attr_mapping.get(attr) for attr in bin_)
-
     def tseries_amount(self, bins: str = "year+month_"):
         crb = self._chronoligally_binned(bins)
         return {
@@ -50,42 +26,30 @@ class OrderAnalytics:
             for key, val in groupby(crb, lambda x: self._cmp(x, bins))
         }
 
-    def tseries_orders(self, bins: str = "year+month_"):
+    def tseries_orders(self, bins: str = "year+month_") -> dict:
         crb = self._chronoligally_binned(bins)
         return {
             " ".join(str(i) for i in key): len(list(val))
             for key, val in groupby(crb, lambda x: self._cmp(x, bins))
         }
 
-    def tseries_charges(self, bins: str = "year+month_"):
+    def tseries_charges(self, bins: str = "year+month_") -> dict:
         """
         Delivery charges are zero only when the order had free delivery (Swiggy Super)
         In that case check free_delivery_discount_hit attribute
         """
         crb = self._chronoligally_binned(bins)
-        charges = (
-            "GST",
-            "Packing Charges",
-            "Delivery Charges",
-            "Cancellation Fee",
-            "Service Charges",
-            "Convenience Fee",
-            "Service Tax",
-            "Vat",
-        )
-        charges_dict = dict()
-        for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
-            orders_ = list(orders)
-            charges_dict[" ".join(str(i) for i in key)] = {
-                charge: round(sum(order.charges.get(charge) for order in orders_), 3)
-                for charge in charges
-            }
-        return charges_dict
+        return {
+            " ".join(str(i) for i in key): dict(
+                sum([Counter(order.charges) for order in orders], Counter())
+            )
+            for key, orders in groupby(crb, lambda x: self._cmp(x, bins))
+        }
 
-    def tseries_delivery_time(self, bins: str = "year+month_", unit: str = "minute"):
+    def tseries_del_time(self, bins: str = "year+month_", unit: str = "minute") -> dict:
         conv = {"minute": 60, "hour": 3600}.get(unit, 1)
         crb = self._chronoligally_binned(bins)
-        deltime_dict = dict()
+        deltime_dict = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
             orders_ = list(orders)
             deltime = [
@@ -123,9 +87,9 @@ class OrderAnalytics:
             }
         return deltime_dict
 
-    def tseries_punctuality(self, bins: str = "year+month_"):
+    def tseries_punctuality(self, bins: str = "year+month_") -> dict:
         crb = self._chronoligally_binned(bins)
-        punctuality_dict = dict()
+        punctuality_dict = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
             # values of groupby() are exhausted once iterated over. thus making a copy
             orders_ = list(orders)
@@ -150,11 +114,10 @@ class OrderAnalytics:
             }
         return punctuality_dict
 
-    def tseries_distance(self, bins: str = "year+month_"):
+    def tseries_distance(self, bins: str = "year+month_") -> dict:
         crb = self._chronoligally_binned(bins)
-        distance_dict = dict()
+        distance_dict = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
-            # values of groupby() are exhausted once iterated over. thus making a copy
             orders_ = list(orders)
             dist_travelled = sum(
                 order.restaurant.customer_distance[1]
@@ -169,17 +132,9 @@ class OrderAnalytics:
             }
         return distance_dict
 
-    def tseries_super_benefits(self, bins: str = "year+month_"):
-        """
-        there are cases when free_delivery_discount > 0 but super_specific_discount = 0
-        this happened in Oct 2021 and Nov 2021
-        therefore recommended to only use free_delivery_discount
-        trade_discount includes extra % discounts offered in Super
-        trade_discount_effective include tracde_discount plus cost of freebies
-        """
+    def tseries_super_benefits(self, bins: str = "year+month_") -> dict:
         crb = self._chronoligally_binned(bins)
-        free_delivery_breakup = ("thresholdFee", "distanceFee", "timeFee", "specialFee")
-        super_benefit = dict()
+        super_benefit = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
             orders_ = list(orders)
             free_deliveries = sum(order.free_delivery_discount_hit for order in orders_)
@@ -189,22 +144,19 @@ class OrderAnalytics:
                 "other_super_discount": round(other_benefits, 3),
                 "free_deliveries": {
                     "total_amount": round(free_deliveries, 3),
-                    "break_up": {
-                        type_: round(
-                            sum(
-                                order.free_del_break_up.get(type_) for order in orders_
-                            ),
-                            3,
+                    "break_up": dict(
+                        sum(
+                            [Counter(order.free_del_break_up) for order in orders_],
+                            Counter(),
                         )
-                        for type_ in free_delivery_breakup
-                    },
+                    ),
                 },
             }
         return super_benefit
 
-    def tseries_furthest_order(self, bins: str = "week_"):
+    def tseries_furthest_order(self, bins: str = "week_") -> dict:
         crb = self._chronoligally_binned(bins)
-        furthest_dict = dict()
+        furthest_dict = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
             orders_ = list(orders)
             furthest = max(orders_, key=lambda x: x.restaurant.customer_distance[1])
@@ -219,31 +171,57 @@ class OrderAnalytics:
             }
         return furthest_dict
 
+    def _chronoligally_binned(self, bins: str) -> list[Order]:
+        return sorted(self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True))
+
+    def _cmp(self, order: Order, bins: str, chrono: bool = False) -> tuple:
+        # TODO: include an option to groupby according to custom strftime string
+        bin_ = set(attr for attr in bins.split("+") if attr)
+        attr_mapping = {
+            "hour": order.order_time.hour,
+            "day": order.order_time.day,
+            "week": order.order_time.isoweekday(),
+            "week_": order.order_time.strftime("%A"),
+            "month": order.order_time.month,
+            "month_": order.order_time.strftime("%B"),
+            "year": order.order_time.year,
+        }
+        if any((x := attr) not in attr_mapping for attr in bin_):
+            raise KeyError(f"cannot group using key: {repr(x)}")
+        if chrono:
+            # else keys will be sorted in alphabetical order instead of chronological
+            attr_mapping["month_"] = attr_mapping["month"]
+            attr_mapping["week_"] = attr_mapping["week"]
+
+        return tuple(attr_mapping.get(attr) for attr in bin_)
+
 
 class OfferAnalytics:
     def __init__(self, swiggy: Swiggy) -> None:
         self.swiggy = swiggy
         self.all_offers = self.swiggy.offer()
 
-    def group(self, attr: str):
+    def group(self, attr: str) -> dict:
         if attr not in list(Offer.__annotations__):
             raise TypeError(f"type object 'Offer' has no attribute {repr(attr)}")
         if attr == "discount_share":
             raise NotImplementedError("use .statistics() instead")
         return dict(Counter(getattr(i, attr) for i in self.all_offers).most_common())
 
-    def statistics(self):
-        disc_types = ("swiggy_discount", "store_discount", "alliance_discount")
+    def statistics(self) -> dict:
+        # disc_types = ("swiggy_discount", "store_discount", "alliance_discount")
         discounts = [offer.total_offer_discount for offer in self.all_offers]
         sorted_offers = sorted(self.all_offers, key=lambda x: x.total_offer_discount)
         min_ = sorted_offers[0]
         max_ = sorted_offers[-1]
         return {
             "total_discount": round(sum(discounts), 3),
-            "discount_breakup": {
-                attr: round(sum(i.discount_share.get(attr) for i in self.all_offers), 3)
-                for attr in disc_types
-            },
+            "discount_breakup": dict(
+                sum(
+                    [Counter(offer.discount_share) for offer in self.all_offers],
+                    Counter(),
+                )
+            ),
             "average_discount": {
                 "orders_w_offers": round(st.mean(discounts), 3),
                 "all_orders": round(sum(discounts) / len(self.swiggy.order()), 3),

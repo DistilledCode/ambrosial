@@ -26,7 +26,7 @@ attrs["offers_data"].remove("order_id")
 attrs["offers_data"].remove("coupon_applied")
 
 
-def order(_order: dict, ddav: bool) -> list[Order]:
+def order(_order: dict, ddav: bool) -> Order:
     return Order(
         **{attr: _order[attr] for attr in attrs["order"]},
         restaurant=restaurant(_order, ddav),
@@ -53,7 +53,7 @@ def item(order: dict) -> list[Item]:
     ]
 
 
-def restaurant(order: dict, ddav: bool) -> list[Restaurant]:
+def restaurant(order: dict, ddav: bool) -> Restaurant:
     address = order["delivery_address"]
     customer_distance = (
         f'{address["id"]}_{address["version"]}' if ddav else address["id"],
@@ -68,7 +68,7 @@ def restaurant(order: dict, ddav: bool) -> list[Restaurant]:
     )
 
 
-def address(order: dict, ddav: bool) -> list[Address]:
+def address(order: dict, ddav: bool) -> Address:
     return Address(
         ddav=ddav,
         **{attr: order["delivery_address"][attr] for attr in attrs["address"]},

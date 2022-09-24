@@ -30,7 +30,7 @@ class Item:
     item_total_discount: float
     single_variant: bool
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.is_veg = bool(self.is_veg)
         self.image = URL + self.image_id
         self.quantity = int(self.quantity)
