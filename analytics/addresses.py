@@ -50,7 +50,7 @@ class AddressAnalytics:
     def _conv_factor(self, unit: str) -> int:
         return {"minute": 60, "hour": 3600}.get(unit, 1)
 
-    def delivery_time_stats(self, unit: str = "secs"):
+    def delivery_time_stats(self, unit: str = "minute"):
         delivery_time = defaultdict(list)
         for order in self.all_orders:
             if (dt := order.delivery_time_in_seconds) != 0:

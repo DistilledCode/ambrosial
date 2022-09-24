@@ -58,8 +58,21 @@ class OrderAnalytics:
         }
 
     def tseries_charges(self, bins: str = "year+month_"):
+        """
+        Delivery charges are zero only when the order had free delivery (Swiggy Super)
+        In that case check free_delivery_discount_hit attribute
+        """
         crb = self._chronoligally_binned(bins)
-        charges = list(self.all_orders[0].charges.keys())
+        charges = (
+            "GST",
+            "Packing Charges",
+            "Delivery Charges",
+            "Cancellation Fee",
+            "Service Charges",
+            "Convenience Fee",
+            "Service Tax",
+            "Vat",
+        )
         charges_dict = dict()
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
             orders_ = list(orders)
@@ -68,6 +81,47 @@ class OrderAnalytics:
                 for charge in charges
             }
         return charges_dict
+
+    def tseries_delivery_time(self, bins: str = "year+month_", unit: str = "minute"):
+        conv = {"minute": 60, "hour": 3600}.get(unit, 1)
+        crb = self._chronoligally_binned(bins)
+        deltime_dict = dict()
+        for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
+            orders_ = list(orders)
+            deltime = [
+                order.delivery_time_in_seconds / conv
+                for order in orders_
+                if order.delivery_time_in_seconds != 0
+            ]
+            sla_time = [
+                order.sla_time
+                for order in orders_
+                if order.delivery_time_in_seconds != 0
+            ]
+            max_time = max(orders_, key=lambda x: x.delivery_time_in_seconds)
+            min_time = min(
+                orders_, key=lambda x: (x.mCancellationTime, x.delivery_time_in_seconds)
+            )
+            deltime_dict[" ".join(str(i) for i in key)] = {
+                "deliveries": len(deltime),
+                "mean_promised": round(st.mean(sla_time), 4),
+                "mean_actual": round(st.mean(deltime), 4),
+                "median": round(st.median(deltime), 4),
+                "std_dev": round(st.stdev(deltime), 4) if len(deltime) > 1 else None,
+                "maximum": {
+                    "promsied": max_time.sla_time,
+                    "actual": round(max_time.delivery_time_in_seconds / conv, 4),
+                    "order_id": max_time.order_id,
+                    "distance": max_time.restaurant.customer_distance[1],
+                },
+                "minimum": {
+                    "promsied": min_time.sla_time,
+                    "actual": round(min_time.delivery_time_in_seconds / conv, 4),
+                    "order_id": min_time.order_id,
+                    "distance": min_time.restaurant.customer_distance[1],
+                },
+            }
+        return deltime_dict
 
     def tseries_punctuality(self, bins: str = "year+month_"):
         crb = self._chronoligally_binned(bins)
@@ -102,21 +156,51 @@ class OrderAnalytics:
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
             # values of groupby() are exhausted once iterated over. thus making a copy
             orders_ = list(orders)
-            dist_travelled = round(
-                sum(
-                    order.restaurant.customer_distance[1]
-                    for order in orders_
-                    if not order.mCancellationTime
-                ),
-                4,
+            dist_travelled = sum(
+                order.restaurant.customer_distance[1]
+                for order in orders_
+                if not order.mCancellationTime
             )
             orders_placed = sum(1 for order in orders_ if not order.mCancellationTime)
             distance_dict[" ".join(str(i) for i in key)] = {
-                "distance_covered": dist_travelled,
+                "distance_covered": round(dist_travelled, 4),
                 "orders_placed": orders_placed,
                 "distance_cov_per_order": round(dist_travelled / orders_placed, 4),
             }
         return distance_dict
+
+    def tseries_super_benefits(self, bins: str = "year+month_"):
+        """
+        there are cases when free_delivery_discount > 0 but super_specific_discount = 0
+        this happened in Oct 2021 and Nov 2021
+        therefore recommended to only use free_delivery_discount
+        trade_discount includes extra % discounts offered in Super
+        trade_discount_effective include tracde_discount plus cost of freebies
+        """
+        crb = self._chronoligally_binned(bins)
+        free_delivery_breakup = ("thresholdFee", "distanceFee", "timeFee", "specialFee")
+        super_benefit = dict()
+        for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
+            orders_ = list(orders)
+            free_deliveries = sum(order.free_delivery_discount_hit for order in orders_)
+            other_benefits = sum(order.trade_discount for order in orders_)
+            super_benefit[" ".join(str(i) for i in key)] = {
+                "total_benefit": round(free_deliveries + other_benefits, 3),
+                "other_super_discount": round(other_benefits, 3),
+                "free_deliveries": {
+                    "total_amount": round(free_deliveries, 3),
+                    "break_up": {
+                        type_: round(
+                            sum(
+                                order.free_del_break_up.get(type_) for order in orders_
+                            ),
+                            3,
+                        )
+                        for type_ in free_delivery_breakup
+                    },
+                },
+            }
+        return super_benefit
 
     def tseries_furthest_order(self, bins: str = "week_"):
         crb = self._chronoligally_binned(bins)
