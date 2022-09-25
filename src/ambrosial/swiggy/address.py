@@ -27,11 +27,11 @@ class Address:
         self.lat = float(self.lat)
         self.lng = float(self.lng)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         return (
-            self.id == other.id and self.version == other.version
+            self.id == other.id and self.version == other.version  # type:ignore
             if self.ddav
-            else self.id == other.id
+            else self.id == other.id  # type:ignore
         )
 
     def __hash__(self) -> int:

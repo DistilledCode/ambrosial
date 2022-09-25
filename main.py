@@ -1,4 +1,4 @@
-from swiggy import Swiggy
+from ambrosial.swiggy import Swiggy
 
 swiggy = Swiggy()
-orders = swiggy.load()
+swiggy.load()

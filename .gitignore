@@ -8,5 +8,6 @@ venv-swiggy
 *.msgpack
 *.json
 zomato
-swiggy/utils.py
+src/*.egg-info
+src/ambrosial/swiggy/utils.py
 future

@@ -1,7 +1,7 @@
-from swiggy.address import Address
-from swiggy.item import Item
-from swiggy.order import Offer, Order, Payment
-from swiggy.restaurant import Restaurant
+from ambrosial.swiggy.address import Address
+from ambrosial.swiggy.item import Item
+from ambrosial.swiggy.order import Offer, Order, Payment
+from ambrosial.swiggy.restaurant import Restaurant
 
 attrs = {
     "order": list(Order.__annotations__),

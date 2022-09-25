@@ -2,16 +2,16 @@ import statistics as st
 from collections import Counter, defaultdict
 from typing import Union
 
-from swiggy import Swiggy
-from swiggy.address import Address
-from swiggy.order import Order
+from ambrosial.swiggy import Swiggy
+from ambrosial.swiggy.address import Address
+from ambrosial.swiggy.order import Order
 
 
 class AddressAnalytics:
     def __init__(self, swiggy: Swiggy) -> None:
-        self.swiggy = swiggy
-        self.all_orders = self.swiggy.order()
-        self.all_addresses = self.swiggy.address()
+        self.swiggy: Swiggy = swiggy
+        self.all_orders: list[Order] = self.swiggy.get_orders()
+        self.all_addresses: list[Address] = self.swiggy.get_addresses()
 
     def group(self, attr: str = None) -> dict[Union[Address, str], int]:
         if attr is None:

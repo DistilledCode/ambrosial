@@ -2,16 +2,16 @@ import statistics as st
 from collections import Counter
 from itertools import groupby, takewhile
 
-from swiggy import Swiggy
-from swiggy.order import Offer, Order, Payment
+from ambrosial.swiggy import Swiggy
+from ambrosial.swiggy.order import Offer, Order
 
 
 class OrderAnalytics:
     def __init__(self, swiggy: Swiggy) -> None:
         self.swiggy = swiggy
-        self.all_orders = self.swiggy.order()
+        self.all_orders: list[Order] = self.swiggy.get_orders()
 
-    def group(self, attr: str):
+    def group(self, attr: str) -> dict:
         attrs = [i for i, j in Order.__annotations__.items() if j.__hash__ is not None]
         if attr not in list(Order.__annotations__):
             raise TypeError(f"type object 'Order' has no attribute {repr(attr)}")
@@ -19,7 +19,7 @@ class OrderAnalytics:
             raise TypeError(f"attribute {repr(attr)} of 'Order' is unhashable")
         return dict(Counter(getattr(i, attr) for i in self.all_orders).most_common())
 
-    def tseries_amount(self, bins: str = "year+month_"):
+    def tseries_amount(self, bins: str = "year+month_") -> dict:
         crb = self._chronoligally_binned(bins)
         return {
             " ".join(str(i) for i in key): sum(order.order_total for order in list(val))
@@ -163,7 +163,7 @@ class OrderAnalytics:
             f_rest = furthest.restaurant
             furthest_dict[" ".join(str(i) for i in key)] = {
                 "distance_covered": furthest.restaurant.customer_distance[1],
-                "ordered from": f"{f_rest.name}, {f_rest.area_name}, {f_rest.city_name}",
+                "restaurant": f"{f_rest.name}, {f_rest.area_name}, {f_rest.city_name}",
                 "items": [item.name for item in furthest.items],
                 "delivered_by": furthest.delivery_boy["name"],
                 "time_taken": f"{furthest.delivery_time_in_seconds/60:.2f} mins",
@@ -176,7 +176,7 @@ class OrderAnalytics:
 
     def _cmp(self, order: Order, bins: str, chrono: bool = False) -> tuple:
         # TODO: include an option to groupby according to custom strftime string
-        bin_ = set(attr for attr in bins.split("+") if attr)
+        bin_ = {attr for attr in bins.split("+") if attr}
         attr_mapping = {
             "hour": order.order_time.hour,
             "day": order.order_time.day,
@@ -199,7 +199,7 @@ class OrderAnalytics:
 class OfferAnalytics:
     def __init__(self, swiggy: Swiggy) -> None:
         self.swiggy = swiggy
-        self.all_offers = self.swiggy.offer()
+        self.all_offers = self.swiggy.get_offers()
 
     def group(self, attr: str) -> dict:
         if attr not in list(Offer.__annotations__):
@@ -224,7 +224,7 @@ class OfferAnalytics:
             ),
             "average_discount": {
                 "orders_w_offers": round(st.mean(discounts), 3),
-                "all_orders": round(sum(discounts) / len(self.swiggy.order()), 3),
+                "all_orders": round(sum(discounts) / len(self.swiggy.get_orders()), 3),
             },
             "std_dev_discount": round(st.stdev(discounts), 4)
             if len(discounts) > 1

@@ -2,9 +2,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Optional, Union
 
-from swiggy.address import Address
-from swiggy.item import Item
-from swiggy.restaurant import Restaurant
+from ambrosial.swiggy.address import Address
+from ambrosial.swiggy.item import Item
+from ambrosial.swiggy.restaurant import Restaurant
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -18,7 +18,7 @@ class Offer:
     description: str
 
     def __eq__(self, other: object) -> bool:
-        return self.order_id == other.order_id
+        return self.order_id == other.order_id  # type:ignore
 
     # def __hash__(self) -> int:
     #     return hash(self.id)
@@ -38,12 +38,12 @@ class Payment:
     paymentGateway: Optional[str] = None
     pgResponseTime: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.order_id = self.transactionId
         self.amount = float(self.amount)
 
     def __eq__(self, other: object) -> bool:
-        return self.transactionId == other.transactionId
+        return self.transactionId == other.transactionId  # type:ignore
 
     def __hash__(self) -> int:
         return hash(self.transactionId)
@@ -55,7 +55,7 @@ class Order:
     order_id: int
     address: Address
     items: list[Item] = field(default_factory=list)
-    charges: dict[str, str]
+    charges: dict[str, float]
     is_coupon_applied: bool
     offers_data: list[Offer] = field(default_factory=list)
     order_time: datetime
@@ -140,7 +140,7 @@ class Order:
     time_fee_effective: int
     special_fee_effective: int
     free_del_break_up: dict[str, Union[int, bool]]
-    order_tags: tuple[str]
+    order_tags: list[str] = field(default_factory=list)
     cancellation_source: str
     updated_at: str
     conservative_last_mile_distance: float
@@ -157,16 +157,15 @@ class Order:
         self.cust_lat_lng = {
             key: float(self.cust_lat_lng[key]) for key in self.cust_lat_lng
         }
-        self.order_tags = tuple(self.order_tags)
         # on_time should be True if sla_difference is positive
         self.sla_time = int(self.sla_time)
         self.actual_sla_time = int(self.actual_sla_time)
         self.sla_difference = int(self.sla_difference)
         self.on_time = True if self.sla_difference >= 0 else False
-        self.order_time = datetime.strptime(self.order_time, "%Y-%m-%d %H:%M:%S")
+        self.order_time = datetime.strptime(str(self.order_time), "%Y-%m-%d %H:%M:%S")
 
-    def __eq__(self, other) -> bool:
-        return self.order_id == other.order_id
+    def __eq__(self, other: object) -> bool:
+        return self.order_id == other.order_id  # type:ignore
 
     def __hash__(self) -> int:
         return hash(self.order_id)

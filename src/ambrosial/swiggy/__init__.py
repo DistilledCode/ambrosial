@@ -10,11 +10,11 @@ import browser_cookie3
 from msgpack import pack, unpack
 from requests import HTTPError, get
 
-import swiggy.convert as convert
-from swiggy.address import Address
-from swiggy.item import Item
-from swiggy.order import Offer, Order, Payment
-from swiggy.restaurant import Restaurant
+import ambrosial.swiggy.convert as convert
+from ambrosial.swiggy.address import Address
+from ambrosial.swiggy.item import Item
+from ambrosial.swiggy.order import Offer, Order, Payment
+from ambrosial.swiggy.restaurant import Restaurant
 
 
 class Swiggy:
@@ -23,13 +23,13 @@ class Swiggy:
         self._o_url = "https://www.swiggy.com/dapi/order/all"
         self._p_url = "https://www.swiggy.com/mapi/profile/info"
         self._cookie_jar = browser_cookie3.load("www.swiggy.com")
-        self.orders_raw = []
-        self.orders_refined = []
-        self._response = None
-        self._resp_json = {}
+        self.orders_raw: list[dict] = []
+        self.orders_refined: list[dict] = []
+        self._resp_json: dict = {}
         self._invalid_reason = ""
-        self._customer_info = {}
+        self._customer_info: dict = {}
         self._fetched = False
+        self._save_path: Path = Path(__file__).resolve().parents[3] / "data"
         self._create_save_path()
 
     @property
@@ -37,7 +37,7 @@ class Swiggy:
         self._validate_response()
         return not bool(self._resp_json["data"]["orders"])
 
-    def account_info(self) -> dict:
+    def get_account_info(self) -> dict:
         if self._customer_info:
             return self._customer_info
         self._response = get(self._p_url, cookies=self._cookie_jar)
@@ -69,108 +69,101 @@ class Swiggy:
 
     def fetchall(self) -> None:
         self.fetch_orders()
-        self.account_info()
+        self.get_account_info()
 
-    def order(self, id: Optional[int] = None) -> Union[list[Order], Order]:
-        if id is None:
-            return [convert.order(order, self.ddav) for order in self.orders_refined]
-        return convert.order(self._order_by_id("order", id), self.ddav)
+    def get_order(self, id_: int) -> Order:
+        return convert.order(self._order_by_id("order", id_), self.ddav)
 
-    def item(self, id: Optional[int] = None) -> list[Item]:
-        if id is None:
-            return list(
-                chain.from_iterable(
-                    [convert.item(order) for order in self.orders_refined]
-                )
-            )
-        return convert.item(self._order_by_id("item", id))
+    def get_orders(self) -> list[Order]:
+        return [convert.order(order, self.ddav) for order in self.orders_refined]
 
-    def restaurant(
-        self, id: Optional[int] = None
-    ) -> Union[list[Restaurant], Restaurant]:
+    def get_item(self, id_: int) -> list[Item]:
+        return convert.item(self._order_by_id("item", id_))
 
-        if id is None:
-            return [
-                convert.restaurant(order, self.ddav) for order in self.orders_refined
-            ]
-        return convert.restaurant(self._order_by_id("restaurant", id), self.ddav)
+    def get_items(self) -> list[Item]:
+        return list(
+            chain.from_iterable([convert.item(order) for order in self.orders_refined])
+        )
 
-    def address(
-        self, id: Optional[int] = None, ver: Optional[int] = None
-    ) -> Union[list[Address], Address]:
+    def get_restaurant(self, id_: int) -> Restaurant:
+        return convert.restaurant(self._order_by_id("restaurant", id_), self.ddav)
 
+    def get_restaurants(self) -> list[Restaurant]:
+        return [convert.restaurant(order, self.ddav) for order in self.orders_refined]
+
+    def get_address(self, id_: int, ver: Optional[int] = None) -> Address:
         if ver is not None and self.ddav is False:
             warn("version number will be ignored as ddav is False")
-        if id is None:
-            return [convert.address(order, self.ddav) for order in self.orders_refined]
         if ver is None and self.ddav is True:
             raise KeyError("provide version number of address as ddav is True")
-        return convert.address(self._order_by_id("address", id, ver), self.ddav)
+        return convert.address(self._order_by_id("address", id_, ver), self.ddav)
 
-    def offer(self, id: Optional[int] = None) -> list[Offer]:
-        if id is None:
-            return list(
-                chain.from_iterable(
-                    [convert.offer(order) for order in self.orders_refined]
-                )
+    def get_addresses(self) -> list[Address]:
+        return [convert.address(order, self.ddav) for order in self.orders_refined]
+
+    def get_offer(self, id_: int) -> list[Offer]:
+        return convert.offer(self._order_by_id("offer", id_))
+
+    def get_offers(self) -> list[Offer]:
+        return list(
+            chain.from_iterable([convert.offer(order) for order in self.orders_refined])
+        )
+
+    def get_payment(self, id_: int) -> list[Payment]:
+        return convert.payment(self._order_by_id("payment", id_))
+
+    def get_payments(self) -> list[Payment]:
+        return list(
+            chain.from_iterable(
+                [convert.payment(order) for order in self.orders_refined]
             )
-        return convert.offer(self._order_by_id("offer", id))
+        )
 
-    def payment(self, id: Optional[int] = None) -> list[Payment]:
-        if id is None:
-            return list(
-                chain.from_iterable(
-                    [convert.payment(order) for order in self.orders_refined]
-                )
-            )
-        return convert.payment(self._order_by_id("payment", id))
-
-    def save(self, fname: str = "orders.json", **kwargs: dict) -> None:
-        curr_ids = set(order["order_id"] for order in self.orders_raw)
+    def save(self, fname: str = "orders.json") -> None:
+        curr_ids = {order["order_id"] for order in self.orders_raw}
         try:
-            with open("data/" + fname, "r", encoding="utf-8") as f:
+            with open(self._save_path / fname, "r", encoding="utf-8") as f:
                 loaded = load(f)
-                loaded_ids = set(order["order_id"] for order in loaded)
+                loaded_ids = {order["order_id"] for order in loaded}
         except (JSONDecodeError, FileNotFoundError):
-            with open("data/" + fname, "w", encoding="utf-8") as f:
-                dump(self.orders_raw, f, **kwargs)
+            with open(self._save_path / fname, "w", encoding="utf-8") as f:
+                dump(self.orders_raw, f, indent=4)
         else:
             if diff := curr_ids.difference(loaded_ids):
                 loaded.extend([i for i in self.orders_raw if i["order_id"] in diff])
-            with open("data/" + fname, "w", encoding="utf-8") as f:
-                dump(loaded, f, **kwargs)
+            with open(self._save_path / fname, "w", encoding="utf-8") as f:
+                dump(loaded, f, indent=4)
 
-    def load(self, fname: str = "orders.json", **kwargs: dict) -> None:
-        with open("data/" + fname, "r", encoding="utf-8") as f:
-            self.orders_raw = load(f, **kwargs)
+    def load(self, fname: str = "orders.json") -> None:
+        with open(self._save_path / fname, "r", encoding="utf-8") as f:
+            self.orders_raw = load(f)
         self.orders_refined = self._get_processed_order()
         self._fetched = True
 
-    def saveb(self, fname: str = "orders.msgpack", **kwargs: dict) -> None:
-        curr_ids = set(order["order_id"] for order in self.orders_raw)
+    def saveb(self, fname: str = "orders.msgpack") -> None:
+        curr_ids = {order["order_id"] for order in self.orders_raw}
         try:
-            with open("data/" + fname, "rb") as f:
+            with open(self._save_path / fname, "rb") as f:
                 loaded = unpack(f)
-                loaded_ids = set(order["order_id"] for order in loaded)
+                loaded_ids = {order["order_id"] for order in loaded}
         except (ValueError, FileNotFoundError):
-            with open("data/" + fname, "wb") as f:
-                pack(self.orders_raw, f, **kwargs)
+            with open(self._save_path / fname, "wb") as f:
+                pack(self.orders_raw, f)
         else:
             if diff := curr_ids.difference(loaded_ids):
                 loaded.extend([i for i in self.orders_raw if i["order_id"] in diff])
-            with open("data/" + fname, "wb") as f:
-                pack(self.orders_raw, f, **kwargs)
+            with open(self._save_path / fname, "wb") as f:
+                pack(self.orders_raw, f)
 
-    def loadb(self, fname: str = "orders.msgpack", **kwargs: dict) -> None:
-        with open("data/" + fname, "rb") as f:
-            self.orders_raw = unpack(f, **kwargs)
+    def loadb(self, fname: str = "orders.msgpack") -> None:
+        with open(self._save_path / fname, "rb") as f:
+            self.orders_raw = unpack(f)
         self.orders_refined = self._get_processed_order()
         self._fetched = True
 
     def _create_save_path(self) -> None:
-        path = Path(__file__).resolve().parents[1] / "data"
-        if path.exists() is False:
-            path.mkdir(parents=True, exist_ok=True)
+        if self._save_path.exists() is False:
+            self._save_path.mkdir(parents=True, exist_ok=True)
 
     def _send_req(self, order_id: Optional[int]) -> None:
         param = {} if order_id is None else {"order_id": order_id}
@@ -214,52 +207,61 @@ class Swiggy:
                 item.setdefault(attr, None)
         return order
 
-    def _order_by_id(self, obj, id, ver: Optional[int] = None) -> dict:
-        def _order():
+    def _order_by_id(
+        self,
+        obj: str,
+        id_: Union[str, int],
+        ver: Optional[int] = None,
+    ) -> dict:
+        def _order() -> dict:
             for order in self.orders_refined:
-                if order["order_id"] == id:
+                if order["order_id"] == id_:
                     return order
-            raise ValueError(f"order with id = {repr(id)} doesn't exist.")
+            raise ValueError(f"order with id = {repr(id_)} doesn't exist.")
 
-        def _item():
+        def _item() -> dict:
             for order in self.orders_refined:
                 for item in order["order_items"]:
-                    if item["item_id"] == id:
+                    if item["item_id"] == id_:
                         return order
-            raise ValueError(f"order item with id = {repr(id)} doesn't exist.")
+            raise ValueError(f"order item with id = {repr(id_)} doesn't exist.")
 
-        def _restaurant():
+        def _restaurant() -> dict:
             for order in self.orders_refined:
-                if order["restaurant_id"] == id:
+                if order["restaurant_id"] == id_:
                     return order
-            raise ValueError(f"restaurant with id = {repr(id)} doesn't exist.")
+            raise ValueError(f"restaurant with id = {repr(id_)} doesn't exist.")
 
-        def _address():
+        def _address() -> dict:
             for order in self.orders_refined:
-                if (
-                    self.ddav is True
-                    and order["delivery_address"]["id"] == id
-                    and order["delivery_address"]["version"] == ver
+                if all(
+                    (
+                        self.ddav is True,
+                        order["delivery_address"]["id"] == id_,
+                        order["delivery_address"]["version"] == ver,
+                    )
                 ):
                     return order
-                elif self.ddav is False and order["delivery_address"]["id"] == id:
+                elif self.ddav is False and order["delivery_address"]["id"] == id_:
                     return order
             raise ValueError(
-                f"Address with (id,ver) = ({id},{ver}) doesn't exist."
-            ) if self.ddav else ValueError(f"Address with id = {id} doesn't exist.")
+                f"Address with (id,ver) = ({id_},{ver}) doesn't exist."
+            ) if self.ddav else ValueError(f"Address with id = {id_} doesn't exist.")
 
-        def _payment():
+        def _payment() -> dict:
             for order in self.orders_refined:
-                if order["transactionId"] == id:
+                if order["transactionId"] == id_:
                     return order
-            raise ValueError(f"payment with transaction id = {repr(id)} doesn't exist.")
+            raise ValueError(
+                f"payment with transaction id = {repr(id_)} doesn't exist."
+            )
 
-        def _offer():
+        def _offer() -> dict:
             for order in self.orders_refined:
                 for offer in order["offers_data"]:
-                    if offer["id"] == id:
+                    if offer["id"] == id_:
                         return order
-            raise ValueError(f"Address with id = {repr(id)} doesn't exist.")
+            raise ValueError(f"Address with id = {repr(id_)} doesn't exist.")
 
         obj_dict = {
             "order": _order,

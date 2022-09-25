@@ -1,16 +1,16 @@
 from collections import Counter, defaultdict
 from itertools import chain
 from statistics import mean
-from typing import Optional, Union
+from typing import Optional
 
-from swiggy import Swiggy
-from swiggy.item import Item
+from ambrosial.swiggy import Swiggy
+from ambrosial.swiggy.item import Item
 
 
 class ItemAnalytics:
     def __init__(self, swiggy: Swiggy) -> None:
         self.swiggy = swiggy
-        self.all_items = self.swiggy.item()
+        self.all_items = self.swiggy.get_items()
 
     def group(self, attr: str = None) -> dict:
         if attr is None:
@@ -40,13 +40,12 @@ class ItemAnalytics:
             hist[item.item_id].append(
                 {
                     "order_id": item.order_id,
-                    "address_id": self.swiggy.order(item.order_id).delivery_address.id,
-                    "order_time": self.swiggy.order(item.order_id).order_time,
+                    "address_id": self.swiggy.get_order(item.order_id).address.id,
+                    "order_time": self.swiggy.get_order(item.order_id).order_time,
                 }
             )
-        if item_id is not None:
-            self._validate_id(item_id)
-            return hist.get(item_id)
+        if item_id is not None and self._validate_id(item_id):
+            return hist.get(item_id)  # type:ignore
         return dict(hist)
 
     def summarise(self, item_id: str) -> dict:
@@ -70,10 +69,8 @@ class ItemAnalytics:
                 "history": [
                     {
                         "order_id": item.order_id,
-                        "address_id": self.swiggy.order(
-                            item.order_id
-                        ).delivery_address.id,
-                        "order_time": self.swiggy.order(item.order_id).order_time,
+                        "address_id": self.swiggy.get_order(item.order_id).address.id,
+                        "order_time": self.swiggy.get_order(item.order_id).order_time,
                     }
                     for item in instances
                     if item.free_item_quantity > 0
