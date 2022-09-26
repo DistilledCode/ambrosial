@@ -1,3 +1,6 @@
 [build-system]
 requires = ["setuptools>=62.6.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+# setuptools>=62.6.0 for using `file: ` directive
+# read more at https://setuptools.pypa.io/en/latest/userguide/declarative_config.html#opt-6

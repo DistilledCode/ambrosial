@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 from itertools import chain
 from statistics import mean
-from typing import Optional
+from typing import Any, Optional
 
 from ambrosial.swiggy import Swiggy
 from ambrosial.swiggy.item import Item
@@ -13,26 +13,17 @@ class ItemAnalytics:
         self.all_items = self.swiggy.get_items()
 
     def group(self, attr: str = None) -> dict:
-        if attr is None:
-            return dict(Counter(self.all_items).most_common())
-        if attr == "item_charges":
-            return NotImplemented
-        if attr == "category_details":
-            return dict(
-                Counter(
-                    getattr(i, attr)["category"] for i in self.all_items
-                ).most_common()
-            )
-        if attr in ["addons", "variants"]:
-            return dict(
-                Counter(
-                    i["name"]
-                    for i in list(
-                        chain.from_iterable([getattr(i, attr) for i in self.all_items])
-                    )
-                ).most_common()
-            )
-        return dict(Counter(getattr(i, attr) for i in self.all_items).most_common())
+        obj_dict = {
+            None: self._get_everything,
+            "addons": self._get_addons_detail,
+            "variants": self._get_variants_detail,
+            "category_details": self._get_category_details,
+            "item_charges": self._get_item_charges,
+        }
+        if (x := obj_dict.get(attr, None)) is not None:
+            return dict(x())  # type:ignore
+        else:
+            return dict(self._get_attr_detail(str(attr)))  # to silence mypy
 
     def history(self, item_id: Optional[str] = None) -> dict:
         hist = defaultdict(list)
@@ -44,12 +35,12 @@ class ItemAnalytics:
                     "order_time": self.swiggy.get_order(item.order_id).order_time,
                 }
             )
-        if item_id is not None and self._validate_id(item_id):
+        if item_id is not None and self._is_valid_id(item_id):
             return hist.get(item_id)  # type:ignore
         return dict(hist)
 
     def summarise(self, item_id: str) -> dict:
-        self._validate_id(item_id)
+        self._is_valid_id(item_id)
         instances = [item for item in self.all_items if item.item_id == item_id]
         return {
             "total_quantity": sum(i.quantity for i in instances),
@@ -64,18 +55,7 @@ class ItemAnalytics:
                 mean(i.effective_item_price for i in instances), 3
             ),
             "image_url": instances[0].image,
-            "received_for_free": {
-                "quantity": sum(i.free_item_quantity for i in instances),
-                "history": [
-                    {
-                        "order_id": item.order_id,
-                        "address_id": self.swiggy.get_order(item.order_id).address.id,
-                        "order_time": self.swiggy.get_order(item.order_id).order_time,
-                    }
-                    for item in instances
-                    if item.free_item_quantity > 0
-                ],
-            },
+            "received_for_free": sum(i.free_item_quantity for i in instances),
         }
 
     def search_item(self, name: str, exact: bool = True) -> list[Item]:
@@ -85,7 +65,35 @@ class ItemAnalytics:
             else [item for item in self.all_items if name.lower() in item.name.lower()]
         )
 
-    def _validate_id(self, item_id: str) -> bool:
+    def _is_valid_id(self, item_id: str) -> bool:
         if item_id in [item.item_id for item in self.all_items]:
             return True
         raise ValueError(f"order item of id = {repr(item_id)} does not exist.")
+
+    def _get_everything(self) -> list[tuple[Item, int]]:
+        return Counter(self.all_items).most_common()
+
+    def _get_attr_detail(self, attr: str) -> list[tuple[Any, int]]:
+        return Counter(getattr(item, attr) for item in self.all_items).most_common()
+
+    def _get_addons_detail(self) -> list[tuple[Any, int]]:
+        return Counter(
+            i["name"]
+            for i in list(chain.from_iterable([item.addons for item in self.all_items]))
+        ).most_common()
+
+    def _get_variants_detail(self) -> list[tuple[Any, int]]:
+        return Counter(
+            i["name"]
+            for i in list(
+                chain.from_iterable([item.variants for item in self.all_items])
+            )
+        ).most_common()
+
+    def _get_category_details(self) -> list[tuple[str, int]]:
+        return Counter(
+            item.category_details["category"] for item in self.all_items
+        ).most_common()
+
+    def _get_item_charges(self) -> None:
+        raise NotImplementedError("unhashable attribute type: <dict>")

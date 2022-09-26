@@ -9,5 +9,4 @@ venv-swiggy
 *.json
 zomato
 src/*.egg-info
-src/ambrosial/swiggy/utils.py
 future

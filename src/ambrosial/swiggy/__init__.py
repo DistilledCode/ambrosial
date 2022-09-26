@@ -3,7 +3,7 @@ from copy import deepcopy
 from itertools import chain
 from json import JSONDecodeError, dump, load
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional
 from warnings import warn
 
 import browser_cookie3
@@ -15,6 +15,7 @@ from ambrosial.swiggy.address import Address
 from ambrosial.swiggy.item import Item
 from ambrosial.swiggy.order import Offer, Order, Payment
 from ambrosial.swiggy.restaurant import Restaurant
+from ambrosial.swiggy.utils import find_order
 
 
 class Swiggy:
@@ -23,8 +24,8 @@ class Swiggy:
         self._o_url = "https://www.swiggy.com/dapi/order/all"
         self._p_url = "https://www.swiggy.com/mapi/profile/info"
         self._cookie_jar = browser_cookie3.load("www.swiggy.com")
-        self.orders_raw: list[dict] = []
-        self.orders_refined: list[dict] = []
+        self.orders_raw: list[dict[str, Any]] = []
+        self.orders_refined: list[dict[str, Any]] = []
         self._resp_json: dict = {}
         self._invalid_reason = ""
         self._customer_info: dict = {}
@@ -33,7 +34,7 @@ class Swiggy:
         self._create_save_path()
 
     @property
-    def _exhausted(self) -> bool:
+    def _is_exhausted(self) -> bool:
         self._validate_response()
         return not bool(self._resp_json["data"]["orders"])
 
@@ -60,7 +61,7 @@ class Swiggy:
         self._send_req(order_id=None)
         self.orders_raw.extend(self._parse_orders())
         print("Retrieving orders...")
-        while self._exhausted is False:
+        while self._is_exhausted is False:
             self._send_req(order_id=self.orders_raw[-1]["order_id"])
             self.orders_raw.extend(self._parse_orders())
         print(f"Retrieved {len(self.orders_raw):>4} orders")
@@ -72,13 +73,13 @@ class Swiggy:
         self.get_account_info()
 
     def get_order(self, id_: int) -> Order:
-        return convert.order(self._order_by_id("order", id_), self.ddav)
+        return convert.order(find_order("order", self.orders_refined, id_), self.ddav)
 
     def get_orders(self) -> list[Order]:
         return [convert.order(order, self.ddav) for order in self.orders_refined]
 
     def get_item(self, id_: int) -> list[Item]:
-        return convert.item(self._order_by_id("item", id_))
+        return convert.item(find_order("item", self.orders_refined, id_))
 
     def get_items(self) -> list[Item]:
         return list(
@@ -86,7 +87,9 @@ class Swiggy:
         )
 
     def get_restaurant(self, id_: int) -> Restaurant:
-        return convert.restaurant(self._order_by_id("restaurant", id_), self.ddav)
+        return convert.restaurant(
+            find_order("restaurant", self.orders_refined, id_), self.ddav
+        )
 
     def get_restaurants(self) -> list[Restaurant]:
         return [convert.restaurant(order, self.ddav) for order in self.orders_refined]
@@ -96,13 +99,19 @@ class Swiggy:
             warn("version number will be ignored as ddav is False")
         if ver is None and self.ddav is True:
             raise KeyError("provide version number of address as ddav is True")
-        return convert.address(self._order_by_id("address", id_, ver), self.ddav)
+        order_ = find_order(
+            "address",
+            self.orders_refined,
+            id_,
+            kwarg={"ver": ver, "ddav": self.ddav},
+        )
+        return convert.address(order_, self.ddav)
 
     def get_addresses(self) -> list[Address]:
         return [convert.address(order, self.ddav) for order in self.orders_refined]
 
     def get_offer(self, id_: int) -> list[Offer]:
-        return convert.offer(self._order_by_id("offer", id_))
+        return convert.offer(find_order("offer", self.orders_refined, id_))
 
     def get_offers(self) -> list[Offer]:
         return list(
@@ -110,7 +119,7 @@ class Swiggy:
         )
 
     def get_payment(self, id_: int) -> list[Payment]:
-        return convert.payment(self._order_by_id("payment", id_))
+        return convert.payment(find_order("payment", self.orders_refined, id_))
 
     def get_payments(self) -> list[Payment]:
         return list(
@@ -173,7 +182,7 @@ class Swiggy:
     def _get_processed_order(self) -> list[dict]:
         return [self._process_orders(deepcopy(order)) for order in self.orders_raw]
 
-    def _process_orders(self, order: dict) -> dict:
+    def _fix_payment(self, order: dict) -> dict:
         for ind, transaction in enumerate(order["payment_transactions"]):
             pg_response = transaction["paymentMeta"]["extPGResponse"]
             if pg_response.__class__ is str and pg_response != "":
@@ -181,6 +190,10 @@ class Swiggy:
                 pg_response = pg_response.replace("true", "True")
                 transaction["paymentMeta"]["extPGResponse"] = literal_eval(pg_response)
                 order["payment_transactions"][ind] = transaction
+        return order
+
+    def _process_orders(self, order: dict) -> dict:
+        order = self._fix_payment(order)
         if order["offers_data"].__class__ is str and order["offers_data"] != "":
             order["offers_data"] = literal_eval(order["offers_data"])
         if order.get("rating_meta", None) is None:
@@ -190,88 +203,7 @@ class Swiggy:
             }
         else:
             order["rating_meta"].pop("asset_id", None)
-        for attr in convert.attrs["order"]:
-            order.setdefault(attr, None)
-        for attr in convert.attrs["restaurant"]:
-            order.setdefault(attr, None)
-        for attr in convert.attrs["address"]:
-            order["delivery_address"].setdefault(attr, None)
-        for attr in convert.attrs["offers_data"]:
-            for offer in order["offers_data"]:
-                offer.setdefault(attr, None)
-        for attr in convert.attrs["payment"]:
-            for payment in order["payment_transactions"]:
-                payment.setdefault(attr, None)
-        for attr in convert.attrs["items"]:
-            for item in order["order_items"]:
-                item.setdefault(attr, None)
         return order
-
-    def _order_by_id(
-        self,
-        obj: str,
-        id_: Union[str, int],
-        ver: Optional[int] = None,
-    ) -> dict:
-        def _order() -> dict:
-            for order in self.orders_refined:
-                if order["order_id"] == id_:
-                    return order
-            raise ValueError(f"order with id = {repr(id_)} doesn't exist.")
-
-        def _item() -> dict:
-            for order in self.orders_refined:
-                for item in order["order_items"]:
-                    if item["item_id"] == id_:
-                        return order
-            raise ValueError(f"order item with id = {repr(id_)} doesn't exist.")
-
-        def _restaurant() -> dict:
-            for order in self.orders_refined:
-                if order["restaurant_id"] == id_:
-                    return order
-            raise ValueError(f"restaurant with id = {repr(id_)} doesn't exist.")
-
-        def _address() -> dict:
-            for order in self.orders_refined:
-                if all(
-                    (
-                        self.ddav is True,
-                        order["delivery_address"]["id"] == id_,
-                        order["delivery_address"]["version"] == ver,
-                    )
-                ):
-                    return order
-                elif self.ddav is False and order["delivery_address"]["id"] == id_:
-                    return order
-            raise ValueError(
-                f"Address with (id,ver) = ({id_},{ver}) doesn't exist."
-            ) if self.ddav else ValueError(f"Address with id = {id_} doesn't exist.")
-
-        def _payment() -> dict:
-            for order in self.orders_refined:
-                if order["transactionId"] == id_:
-                    return order
-            raise ValueError(
-                f"payment with transaction id = {repr(id_)} doesn't exist."
-            )
-
-        def _offer() -> dict:
-            for order in self.orders_refined:
-                for offer in order["offers_data"]:
-                    if offer["id"] == id_:
-                        return order
-            raise ValueError(f"Address with id = {repr(id_)} doesn't exist.")
-
-        obj_dict = {
-            "order": _order,
-            "item": _item,
-            "restaurant": _restaurant,
-            "address": _address,
-            "payment": _payment,
-            "offer": _offer,
-        }
-        return obj_dict[obj]()
 
     def _validate_response(self) -> None:
         self._response.raise_for_status()
@@ -280,7 +212,7 @@ class Swiggy:
 
     def _parse_orders(self) -> list[dict]:
         self._validate_response()
-        return [order for order in self._response.json()["data"]["orders"]]
+        return self._response.json()["data"]["orders"]
 
     def __repr__(self) -> str:
         return f"Swiggy(ddav = {self.ddav})"
