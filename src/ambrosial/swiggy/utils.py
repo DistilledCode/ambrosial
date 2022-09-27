@@ -1,3 +1,5 @@
+from http.cookiejar import Cookie
+from time import time
 from typing import Any, Union
 
 
@@ -94,3 +96,25 @@ def find_order(
         "offer": _offer,
     }
     return obj_dict[obj](order_list, obj_id)
+
+
+def get_empty_sid() -> Cookie:
+    return Cookie(
+        version=0,
+        name="sid",
+        value="",
+        port=None,
+        port_specified=False,
+        domain="www.swiggy.com",
+        domain_specified=True,
+        domain_initial_dot=True,
+        path="/",
+        path_specified=True,
+        secure=True,
+        expires=int(time()) + 31536000,  # +1 year
+        discard=False,
+        comment=None,
+        comment_url=None,
+        rfc2109=False,
+        rest={"HTTPOnly": ""},
+    )

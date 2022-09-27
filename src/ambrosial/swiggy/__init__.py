@@ -11,11 +11,11 @@ from msgpack import pack, unpack
 from requests import HTTPError, get
 
 import ambrosial.swiggy.convert as convert
+import ambrosial.swiggy.utils as utils
 from ambrosial.swiggy.address import Address
 from ambrosial.swiggy.item import Item
 from ambrosial.swiggy.order import Offer, Order, Payment
 from ambrosial.swiggy.restaurant import Restaurant
-from ambrosial.swiggy.utils import find_order
 
 
 class Swiggy:
@@ -41,7 +41,9 @@ class Swiggy:
     def get_account_info(self) -> dict:
         if self._customer_info:
             return self._customer_info
-        self._response = get(self._p_url, cookies=self._cookie_jar)
+        temp_cookie = self._cookie_jar
+        temp_cookie.set_cookie(utils.get_empty_sid())
+        self._response = get(self._p_url, cookies=temp_cookie)
         self._resp_json = self._response.json()
         self._validate_response()
         data = self._resp_json["data"]
@@ -73,13 +75,20 @@ class Swiggy:
         self.get_account_info()
 
     def get_order(self, id_: int) -> Order:
-        return convert.order(find_order("order", self.orders_refined, id_), self.ddav)
+        return convert.order(
+            utils.find_order(
+                "order",
+                self.orders_refined,
+                id_,
+            ),
+            self.ddav,
+        )
 
     def get_orders(self) -> list[Order]:
         return [convert.order(order, self.ddav) for order in self.orders_refined]
 
     def get_item(self, id_: int) -> list[Item]:
-        return convert.item(find_order("item", self.orders_refined, id_))
+        return convert.item(utils.find_order("item", self.orders_refined, id_))
 
     def get_items(self) -> list[Item]:
         return list(
@@ -88,7 +97,12 @@ class Swiggy:
 
     def get_restaurant(self, id_: int) -> Restaurant:
         return convert.restaurant(
-            find_order("restaurant", self.orders_refined, id_), self.ddav
+            utils.find_order(
+                "restaurant",
+                self.orders_refined,
+                id_,
+            ),
+            self.ddav,
         )
 
     def get_restaurants(self) -> list[Restaurant]:
@@ -99,7 +113,7 @@ class Swiggy:
             warn("version number will be ignored as ddav is False")
         if ver is None and self.ddav is True:
             raise KeyError("provide version number of address as ddav is True")
-        order_ = find_order(
+        order_ = utils.find_order(
             "address",
             self.orders_refined,
             id_,
@@ -111,7 +125,7 @@ class Swiggy:
         return [convert.address(order, self.ddav) for order in self.orders_refined]
 
     def get_offer(self, id_: int) -> list[Offer]:
-        return convert.offer(find_order("offer", self.orders_refined, id_))
+        return convert.offer(utils.find_order("offer", self.orders_refined, id_))
 
     def get_offers(self) -> list[Offer]:
         return list(
@@ -119,7 +133,7 @@ class Swiggy:
         )
 
     def get_payment(self, id_: int) -> list[Payment]:
-        return convert.payment(find_order("payment", self.orders_refined, id_))
+        return convert.payment(utils.find_order("payment", self.orders_refined, id_))
 
     def get_payments(self) -> list[Payment]:
         return list(
