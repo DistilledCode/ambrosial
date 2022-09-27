@@ -48,7 +48,9 @@ class Item:
             self.item_charges[key] = float(self.item_charges[key])
 
     def __eq__(self, other: object) -> bool:
-        return self.item_id == other.item_id  # type:ignore
+        if not isinstance(other, Item):
+            return NotImplemented
+        return self.item_id == other.item_id
 
     def __hash__(self) -> int:
         return hash(self.item_id)

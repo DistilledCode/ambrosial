@@ -28,10 +28,12 @@ class Address:
         self.lng = float(self.lng)
 
     def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Address):
+            return NotImplemented
         return (
-            self.id == other.id and self.version == other.version  # type:ignore
+            self.id == other.id and self.version == other.version
             if self.ddav
-            else self.id == other.id  # type:ignore
+            else self.id == other.id
         )
 
     def __hash__(self) -> int:

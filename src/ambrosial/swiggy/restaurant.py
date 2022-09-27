@@ -22,12 +22,14 @@ class Restaurant:
     gst_category: str
 
     def __post_init__(self) -> None:
-        _lat_lng = [float(i) for i in self.coordinates.split(",")]  # type:ignore
+        _lat_lng = [float(i) for i in str(self.coordinates).split(",")]
         self.coordinates = dict(zip(["lat", "lng"], _lat_lng))
         self.image = URL + self.cover_image
 
     def __eq__(self, other: object) -> bool:
-        return self.id == other.id  # type:ignore
+        if not isinstance(other, Restaurant):
+            return NotImplemented
+        return self.id == other.id
 
     def __hash__(self) -> int:
         return hash(self.id)

@@ -18,10 +18,13 @@ class Offer:
     description: str
 
     def __eq__(self, other: object) -> bool:
-        return self.order_id == other.order_id  # type:ignore
+        if not isinstance(other, Offer):
+            return NotImplemented
+        return self.order_id == other.order_id
 
-    # def __hash__(self) -> int:
-    #     return hash(self.id)
+    def __hash__(self) -> int:
+        # to have different hash from parent Order
+        return hash(self.order_id // 2)
 
 
 @dataclass(kw_only=True)
@@ -30,7 +33,7 @@ class Payment:
     paymentMethodDisplayName: str
     transactionId: str
     amount: float
-    paymentMeta: dict[str, Optional[Union[str, dict]]]
+    paymentMeta: dict[str, Any]
     transactionStatus: str
     swiggyTransactionId: str
     pgTransactionId: str
@@ -43,6 +46,8 @@ class Payment:
         self.amount = float(self.amount)
 
     def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Payment):
+            return NotImplemented
         return self.transactionId == other.transactionId  # type:ignore
 
     def __hash__(self) -> int:
@@ -65,7 +70,7 @@ class Order:
     order_type: str
     order_placement_status: str
     sla_time: int
-    delivery_boy: dict[str, Optional[Union[int, str]]]
+    delivery_boy: dict[str, Any]
     restaurant: Restaurant
     payment_method: str
     payment_method_involved: str
@@ -161,11 +166,13 @@ class Order:
         self.sla_time = int(self.sla_time)
         self.actual_sla_time = int(self.actual_sla_time)
         self.sla_difference = int(self.sla_difference)
-        self.on_time = True if self.sla_difference >= 0 else False
+        self.on_time = self.sla_difference >= 0
         self.order_time = datetime.strptime(str(self.order_time), "%Y-%m-%d %H:%M:%S")
 
     def __eq__(self, other: object) -> bool:
-        return self.order_id == other.order_id  # type:ignore
+        if not isinstance(other, Order):
+            return NotImplemented
+        return self.order_id == other.order_id
 
     def __hash__(self) -> int:
         return hash(self.order_id)

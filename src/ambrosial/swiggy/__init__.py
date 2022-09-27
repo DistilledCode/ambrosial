@@ -19,7 +19,7 @@ from ambrosial.swiggy.restaurant import Restaurant
 
 
 class Swiggy:
-    def __init__(self, ddav: bool = False) -> None:
+    def __init__(self, ddav: bool = False, path: str = "data") -> None:
         self.ddav = ddav
         self._o_url = "https://www.swiggy.com/dapi/order/all"
         self._p_url = "https://www.swiggy.com/mapi/profile/info"
@@ -30,8 +30,8 @@ class Swiggy:
         self._invalid_reason = ""
         self._customer_info: dict = {}
         self._fetched = False
-        self._save_path: Path = Path(__file__).resolve().parents[3] / "data"
-        self._create_save_path()
+        self._path = Path(__file__).resolve().parents[3] / path
+        utils.create_save_path(self._path)
 
     @property
     def _is_exhausted(self) -> bool:
@@ -145,20 +145,20 @@ class Swiggy:
     def save(self, fname: str = "orders.json") -> None:
         curr_ids = {order["order_id"] for order in self.orders_raw}
         try:
-            with open(self._save_path / fname, "r", encoding="utf-8") as f:
+            with open(self._path / fname, "r", encoding="utf-8") as f:
                 loaded = load(f)
                 loaded_ids = {order["order_id"] for order in loaded}
         except (JSONDecodeError, FileNotFoundError):
-            with open(self._save_path / fname, "w", encoding="utf-8") as f:
+            with open(self._path / fname, "w", encoding="utf-8") as f:
                 dump(self.orders_raw, f, indent=4)
         else:
             if diff := curr_ids.difference(loaded_ids):
                 loaded.extend([i for i in self.orders_raw if i["order_id"] in diff])
-            with open(self._save_path / fname, "w", encoding="utf-8") as f:
+            with open(self._path / fname, "w", encoding="utf-8") as f:
                 dump(loaded, f, indent=4)
 
     def load(self, fname: str = "orders.json") -> None:
-        with open(self._save_path / fname, "r", encoding="utf-8") as f:
+        with open(self._path / fname, "r", encoding="utf-8") as f:
             self.orders_raw = load(f)
         self.orders_refined = self._get_processed_order()
         self._fetched = True
@@ -166,27 +166,23 @@ class Swiggy:
     def saveb(self, fname: str = "orders.msgpack") -> None:
         curr_ids = {order["order_id"] for order in self.orders_raw}
         try:
-            with open(self._save_path / fname, "rb") as f:
+            with open(self._path / fname, "rb") as f:
                 loaded = unpack(f)
                 loaded_ids = {order["order_id"] for order in loaded}
         except (ValueError, FileNotFoundError):
-            with open(self._save_path / fname, "wb") as f:
+            with open(self._path / fname, "wb") as f:
                 pack(self.orders_raw, f)
         else:
             if diff := curr_ids.difference(loaded_ids):
                 loaded.extend([i for i in self.orders_raw if i["order_id"] in diff])
-            with open(self._save_path / fname, "wb") as f:
+            with open(self._path / fname, "wb") as f:
                 pack(self.orders_raw, f)
 
     def loadb(self, fname: str = "orders.msgpack") -> None:
-        with open(self._save_path / fname, "rb") as f:
+        with open(self._path / fname, "rb") as f:
             self.orders_raw = unpack(f)
         self.orders_refined = self._get_processed_order()
         self._fetched = True
-
-    def _create_save_path(self) -> None:
-        if self._save_path.exists() is False:
-            self._save_path.mkdir(parents=True, exist_ok=True)
 
     def _send_req(self, order_id: Optional[int]) -> None:
         param = {} if order_id is None else {"order_id": order_id}

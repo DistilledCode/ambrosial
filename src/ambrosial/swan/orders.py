@@ -73,13 +73,13 @@ class OrderAnalytics:
                 "median": round(st.median(deltime), 4),
                 "std_dev": round(st.stdev(deltime), 4) if len(deltime) > 1 else None,
                 "maximum": {
-                    "promsied": max_time.sla_time,
+                    "promised": max_time.sla_time,
                     "actual": round(max_time.delivery_time_in_seconds / conv, 4),
                     "order_id": max_time.order_id,
                     "distance": max_time.restaurant.customer_distance[1],
                 },
                 "minimum": {
-                    "promsied": min_time.sla_time,
+                    "promised": min_time.sla_time,
                     "actual": round(min_time.delivery_time_in_seconds / conv, 4),
                     "order_id": min_time.order_id,
                     "distance": min_time.restaurant.customer_distance[1],
@@ -209,7 +209,6 @@ class OfferAnalytics:
         return dict(Counter(getattr(i, attr) for i in self.all_offers).most_common())
 
     def statistics(self) -> dict:
-        # disc_types = ("swiggy_discount", "store_discount", "alliance_discount")
         discounts = [offer.total_offer_discount for offer in self.all_offers]
         sorted_offers = sorted(self.all_offers, key=lambda x: x.total_offer_discount)
         min_ = sorted_offers[0]

@@ -1,4 +1,5 @@
 from http.cookiejar import Cookie
+from pathlib import Path
 from time import time
 from typing import Any, Union
 
@@ -118,3 +119,8 @@ def get_empty_sid() -> Cookie:
         rfc2109=False,
         rest={"HTTPOnly": ""},
     )
+
+
+def create_save_path(path_: Path) -> None:
+    if path_.exists() is False:
+        path_.mkdir(parents=True, exist_ok=True)
