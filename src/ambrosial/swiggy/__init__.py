@@ -1,16 +1,15 @@
 from ast import literal_eval
 from copy import deepcopy
 from itertools import chain
-from json import JSONDecodeError, dump, load
 from pathlib import Path
 from typing import Any, Optional
 from warnings import warn
 
 import browser_cookie3
-from msgpack import pack, unpack
-from requests import HTTPError, get
+from requests import get
 
 import ambrosial.swiggy.convert as convert
+import ambrosial.swiggy.iohandler as ioh
 import ambrosial.swiggy.utils as utils
 from ambrosial.swiggy.address import Address
 from ambrosial.swiggy.item import Item
@@ -19,24 +18,24 @@ from ambrosial.swiggy.restaurant import Restaurant
 
 
 class Swiggy:
-    def __init__(self, ddav: bool = False, path: str = "data") -> None:
+    def __init__(self, ddav: bool = False) -> None:
         self.ddav = ddav
         self._o_url = "https://www.swiggy.com/dapi/order/all"
         self._p_url = "https://www.swiggy.com/mapi/profile/info"
         self._cookie_jar = browser_cookie3.load("www.swiggy.com")
         self.orders_raw: list[dict[str, Any]] = []
         self.orders_refined: list[dict[str, Any]] = []
-        self._resp_json: dict = {}
+        self._response_json: dict = {}
         self._invalid_reason = ""
         self._customer_info: dict = {}
         self._fetched = False
-        self._path = Path(__file__).resolve().parents[3] / path
+        self._path = Path.home() / ".ambrosial" / "data"
         utils.create_save_path(self._path)
 
     @property
     def _is_exhausted(self) -> bool:
-        self._validate_response()
-        return not bool(self._resp_json["data"]["orders"])
+        utils.validate_response(self._response)
+        return not bool(self._response_json["data"]["orders"])
 
     def get_account_info(self) -> dict:
         if self._customer_info:
@@ -44,9 +43,9 @@ class Swiggy:
         temp_cookie = self._cookie_jar
         temp_cookie.set_cookie(utils.get_empty_sid())
         self._response = get(self._p_url, cookies=temp_cookie)
-        self._resp_json = self._response.json()
-        self._validate_response()
-        data = self._resp_json["data"]
+        self._response_json = self._response.json()
+        utils.validate_response(self._response)
+        data = self._response_json["data"]
         self._customer_info = {
             "customer_id": data["customer_id"],
             "name": data["name"],
@@ -142,52 +141,26 @@ class Swiggy:
             )
         )
 
-    def save(self, fname: str = "orders.json") -> None:
-        curr_ids = {order["order_id"] for order in self.orders_raw}
-        try:
-            with open(self._path / fname, "r", encoding="utf-8") as f:
-                loaded = load(f)
-                loaded_ids = {order["order_id"] for order in loaded}
-        except (JSONDecodeError, FileNotFoundError):
-            with open(self._path / fname, "w", encoding="utf-8") as f:
-                dump(self.orders_raw, f, indent=4)
-        else:
-            if diff := curr_ids.difference(loaded_ids):
-                loaded.extend([i for i in self.orders_raw if i["order_id"] in diff])
-            with open(self._path / fname, "w", encoding="utf-8") as f:
-                dump(loaded, f, indent=4)
+    def savej(self, fname: str = "orders.json") -> None:
+        ioh.savej(self._path / fname, self.orders_raw)
 
-    def load(self, fname: str = "orders.json") -> None:
-        with open(self._path / fname, "r", encoding="utf-8") as f:
-            self.orders_raw = load(f)
+    def saveb(self, fname: str = "orders.msgpack") -> None:
+        ioh.saveb(self._path / fname, self.orders_raw)
+
+    def loadj(self, fname: str = "orders.json") -> None:
+        self.orders_raw = ioh.loadj(self._path / fname)
         self.orders_refined = self._get_processed_order()
         self._fetched = True
 
-    def saveb(self, fname: str = "orders.msgpack") -> None:
-        curr_ids = {order["order_id"] for order in self.orders_raw}
-        try:
-            with open(self._path / fname, "rb") as f:
-                loaded = unpack(f)
-                loaded_ids = {order["order_id"] for order in loaded}
-        except (ValueError, FileNotFoundError):
-            with open(self._path / fname, "wb") as f:
-                pack(self.orders_raw, f)
-        else:
-            if diff := curr_ids.difference(loaded_ids):
-                loaded.extend([i for i in self.orders_raw if i["order_id"] in diff])
-            with open(self._path / fname, "wb") as f:
-                pack(self.orders_raw, f)
-
     def loadb(self, fname: str = "orders.msgpack") -> None:
-        with open(self._path / fname, "rb") as f:
-            self.orders_raw = unpack(f)
+        self.orders_raw = ioh.loadb(self._path / fname)
         self.orders_refined = self._get_processed_order()
         self._fetched = True
 
     def _send_req(self, order_id: Optional[int]) -> None:
         param = {} if order_id is None else {"order_id": order_id}
         self._response = get(self._o_url, cookies=self._cookie_jar, params=param)
-        self._resp_json = self._response.json()
+        self._response_json = self._response.json()
 
     def _get_processed_order(self) -> list[dict]:
         return [self._process_orders(deepcopy(order)) for order in self.orders_raw]
@@ -215,13 +188,8 @@ class Swiggy:
             order["rating_meta"].pop("asset_id", None)
         return order
 
-    def _validate_response(self) -> None:
-        self._response.raise_for_status()
-        if not self._resp_json["statusCode"] == 0:
-            raise HTTPError(f"Bad Response: {self._resp_json['statusMessage']}")
-
     def _parse_orders(self) -> list[dict]:
-        self._validate_response()
+        utils.validate_response(self._response)
         return self._response.json()["data"]["orders"]
 
     def __repr__(self) -> str:

@@ -118,10 +118,6 @@ class Order:
     base_order_id: Optional[int] = None
     is_replicated: bool
     cloning_reason: Optional[str] = None
-    cancellation_fee_collected: int
-    cancellation_fee_applied: int
-    cancellation_fee_collected_total: int
-    is_cancellation_fee_already_reverted: bool
     previous_cancellation_fee: int
     is_select: bool
     is_first_order_delivered: bool
@@ -132,10 +128,6 @@ class Order:
     cashback_source: str
     mCancellationTime: int
     configurations: dict[str, bool]
-    success_message_info: str
-    success_title: str
-    success_message_type: str
-    savings_shown_to_customer: str
     threshold_fee: int
     distance_fee: int
     time_fee: int

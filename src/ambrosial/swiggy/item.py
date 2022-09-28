@@ -28,7 +28,6 @@ class Item:
     category_details: dict[str, str]
     item_charges: dict[str, float]
     item_total_discount: float
-    single_variant: bool
 
     def __post_init__(self) -> None:
         self.is_veg = bool(self.is_veg)

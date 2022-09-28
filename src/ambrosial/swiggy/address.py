@@ -20,7 +20,6 @@ class Address:
     address_line1: str
     address_line2: str
     alternate_mobile: str
-    voice_directions_s3_uri: str
     flat_no: str
 
     def __post_init__(self) -> None:

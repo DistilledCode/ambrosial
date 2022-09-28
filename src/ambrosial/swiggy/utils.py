@@ -3,6 +3,8 @@ from pathlib import Path
 from time import time
 from typing import Any, Union
 
+from requests import HTTPError, Response
+
 
 def _order(
     order_list: list[dict[str, Any]],
@@ -102,8 +104,8 @@ def find_order(
 def get_empty_sid() -> Cookie:
     return Cookie(
         version=0,
-        name="sid",
-        value="",
+        name="_sid",
+        value="0",
         port=None,
         port_specified=False,
         domain="www.swiggy.com",
@@ -113,7 +115,7 @@ def get_empty_sid() -> Cookie:
         path_specified=True,
         secure=True,
         expires=int(time()) + 31536000,  # +1 year
-        discard=False,
+        discard=True,
         comment=None,
         comment_url=None,
         rfc2109=False,
@@ -124,3 +126,10 @@ def get_empty_sid() -> Cookie:
 def create_save_path(path_: Path) -> None:
     if path_.exists() is False:
         path_.mkdir(parents=True, exist_ok=True)
+
+
+def validate_response(response: Response) -> None:
+    response.raise_for_status()
+    resp_json = response.json()
+    if not resp_json["statusCode"] == 0:
+        raise HTTPError(f"Bad Response: {resp_json['statusMessage']}")
