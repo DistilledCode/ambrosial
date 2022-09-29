@@ -26,7 +26,6 @@ class Swiggy:
         self.orders_raw: list[dict[str, Any]] = []
         self.orders_refined: list[dict[str, Any]] = []
         self._response_json: dict = {}
-        self._invalid_reason = ""
         self._customer_info: dict = {}
         self._fetched = False
         self._path = Path.home() / ".ambrosial" / "data"
@@ -109,9 +108,9 @@ class Swiggy:
 
     def get_address(self, id_: int, ver: Optional[int] = None) -> Address:
         if ver is not None and self.ddav is False:
-            warn("version number will be ignored as ddav is False")
+            warn(f"version number will be ignored as {self.ddav=}")
         if ver is None and self.ddav is True:
-            raise KeyError("provide version number of address as ddav is True")
+            raise KeyError(f"provide version number of address as {self.ddav=}")
         order_ = utils.find_order(
             "address",
             self.orders_refined,

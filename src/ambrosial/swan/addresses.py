@@ -21,7 +21,7 @@ class AddressAnalytics:
     def coordinates(self) -> list[dict]:
         return [
             {
-                "id_version": f"{address.id}_{address.version}",
+                "id_version": f"{address.add_id}_{address.version}",
                 "annotation": address.annotation,
                 "latitude": address.lat,
                 "longitude": address.lng,
@@ -59,9 +59,9 @@ class AddressAnalytics:
 
     def _get_key(self, order: Order) -> str:
         return (
-            f"{order.address.id}_{order.address.version}"
+            f"{order.address.add_id}_{order.address.version}"
             if self.swiggy.ddav
-            else order.address.id
+            else order.address.add_id
         )
 
     def _conv_factor(self, unit: str) -> int:

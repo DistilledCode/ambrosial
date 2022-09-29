@@ -1,8 +1,7 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass(kw_only=True)
-class Address:
+class Address(BaseModel):
     ddav: bool
     version: int
     name: str
@@ -16,24 +15,20 @@ class Address:
     city: str
     lat: float
     lng: float
-    id: str
+    add_id: int
     address_line1: str
     address_line2: str
     alternate_mobile: str
     flat_no: str
 
-    def __post_init__(self) -> None:
-        self.lat = float(self.lat)
-        self.lng = float(self.lng)
-
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Address):
             return NotImplemented
         return (
-            self.id == other.id and self.version == other.version
+            self.add_id == other.add_id and self.version == other.version
             if self.ddav
-            else self.id == other.id
+            else self.add_id == other.add_id
         )
 
     def __hash__(self) -> int:
-        return hash(str(self.id) + str(self.version))
+        return hash(str(self.add_id) + str(self.version))

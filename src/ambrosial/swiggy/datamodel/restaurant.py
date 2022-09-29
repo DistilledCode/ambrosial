@@ -1,35 +1,27 @@
-from dataclasses import dataclass
-
-URL = "https://res.cloudinary.com/swiggy/image/upload/"
+from pydantic import BaseModel, HttpUrl
 
 
-@dataclass(kw_only=True)
-class Restaurant:
-    id: int
+class Restaurant(BaseModel):
+    rest_id: int
     name: str
     address: str
     locality: str
-    type: str
+    rest_type: str
     city_code: int
     city_name: str
     area_code: int
     area_name: str
-    cuisine: list[str]
+    cuisine: list
     coordinates: dict[str, float]
     customer_distance: tuple[str, float]
-    cover_image: str
+    cover_image: HttpUrl
     taxation_type: str
     gst_category: str
-
-    def __post_init__(self) -> None:
-        _lat_lng = [float(i) for i in str(self.coordinates).split(",")]
-        self.coordinates = dict(zip(["lat", "lng"], _lat_lng))
-        self.image = URL + self.cover_image
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Restaurant):
             return NotImplemented
-        return self.id == other.id
+        return self.rest_id == other.rest_id
 
     def __hash__(self) -> int:
-        return hash(self.id)
+        return hash(self.rest_id)

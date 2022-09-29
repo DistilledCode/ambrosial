@@ -31,7 +31,7 @@ class ItemAnalytics:
             hist[item.item_id].append(
                 {
                     "order_id": item.order_id,
-                    "address_id": self.swiggy.get_order(item.order_id).address.id,
+                    "address_id": self.swiggy.get_order(item.order_id).address.add_id,
                     "order_time": self.swiggy.get_order(item.order_id).order_time,
                 }
             )

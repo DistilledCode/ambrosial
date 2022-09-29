@@ -3,7 +3,8 @@ from ambrosial.swiggy.datamodel.item import Item
 from ambrosial.swiggy.datamodel.order import Offer, Order, Payment
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
 
-attrs = {
+URL = "https://res.cloudinary.com/swiggy/image/upload/"
+ATTRS = {
     "order": list(Order.__annotations__),
     "items": list(Item.__annotations__),
     "restaurant": ["restaurant_" + attr for attr in list(Restaurant.__annotations__)],
@@ -12,41 +13,49 @@ attrs = {
     "payment": list(Payment.__annotations__),
 }
 
-attrs["order"].remove("restaurant")
-attrs["order"].remove("payment_transaction")
-attrs["order"].remove("offers_data")
-attrs["order"].remove("items")
-attrs["order"].remove("address")
-attrs["items"].remove("order_id")
-attrs["items"].remove("restaurant_id")
-attrs["restaurant"].remove("restaurant_customer_distance")
-attrs["restaurant"].remove("restaurant_coordinates")
-attrs["address"].remove("ddav")
-attrs["offers_data"].remove("order_id")
-attrs["offers_data"].remove("coupon_applied")
+ATTRS["order"].remove("restaurant")
+ATTRS["order"].remove("payment_transaction")
+ATTRS["order"].remove("offers_data")
+ATTRS["order"].remove("items")
+ATTRS["order"].remove("address")
+ATTRS["order"].remove("on_time")
+ATTRS["items"].remove("order_id")
+ATTRS["items"].remove("restaurant_id")
+ATTRS["items"].remove("image")
+ATTRS["restaurant"].remove("restaurant_customer_distance")
+ATTRS["restaurant"].remove("restaurant_coordinates")
+ATTRS["restaurant"].remove("restaurant_cover_image")
+ATTRS["restaurant"].remove("restaurant_rest_id")
+ATTRS["restaurant"].remove("restaurant_rest_type")
+ATTRS["address"].remove("ddav")
+ATTRS["address"].remove("add_id")
+ATTRS["offers_data"].remove("order_id")
+ATTRS["offers_data"].remove("coupon_applied")
+ATTRS["payment"].remove("order_id")
 
 
 def order(_order: dict, ddav: bool) -> Order:
     return Order(
-        **{attr: _order.get(attr, None) for attr in attrs["order"]},
+        **{attr: _order.get(attr, None) for attr in ATTRS["order"]},
         restaurant=restaurant(_order, ddav),
         payment_transaction=payment(_order),
         items=item(_order),
         offers_data=offer(_order),
         address=address(_order, ddav),
+        on_time=int(_order["sla_difference"]) >= 0,
     )
 
 
 def item(order: dict) -> list[Item]:
     for item in order["order_items"]:
-        # for attr in attrs["items"]:
-        #     item.setdefault(attr, None)
+        if not item["free_item_quantity"]:
+            item["free_item_quantity"] = 0
         if item["image_id"] is None or not item["image_id"]:
             item["image_id"] = "swiggy_pay/SwiggyLogo"
     return [
         Item(
-            # **{attr: item[attr] for attr in attrs["items"]},
-            **{attr: item.get(attr, None) for attr in attrs["items"]},
+            **{attr: item.get(attr, None) for attr in ATTRS["items"]},
+            image=URL + item["image_id"],
             order_id=order["order_id"],
             restaurant_id=order["restaurant_id"],
         )
@@ -56,17 +65,23 @@ def item(order: dict) -> list[Item]:
 
 def restaurant(order: dict, ddav: bool) -> Restaurant:
     address = order["delivery_address"]
-    customer_distance = (
-        f'{address["id"]}_{address["version"]}' if ddav else address["id"],
-        float(order["restaurant_customer_distance"]),
-    )
+    address_id = f'{address["id"]}_{address["version"]}' if ddav else address["id"]
+    customer_distance = (address_id, order["restaurant_customer_distance"])
+    lat_lng = order["restaurant_lat_lng"].split(",")
+    coordinates = {
+        "lat": lat_lng[0],
+        "lng": lat_lng[1],
+    }
     return Restaurant(
         **{
             attr.replace("restaurant_", ""): order.get(attr, None)
-            for attr in attrs["restaurant"]
+            for attr in ATTRS["restaurant"]
         },
-        coordinates=order["restaurant_lat_lng"],
+        rest_id=order["restaurant_id"],
+        rest_type=order["restaurant_type"],
+        coordinates=coordinates,
         customer_distance=customer_distance,
+        cover_image=URL + order["restaurant_cover_image"],
     )
 
 
@@ -74,8 +89,9 @@ def address(order: dict, ddav: bool) -> Address:
     return Address(
         ddav=ddav,
         **{
-            attr: order["delivery_address"].get(attr, None) for attr in attrs["address"]
+            attr: order["delivery_address"].get(attr, None) for attr in ATTRS["address"]
         },
+        add_id=order["delivery_address"]["id"],
     )
 
 
@@ -83,7 +99,10 @@ def payment(order: dict) -> list[Payment]:
     if not order["payment_transactions"]:
         return []
     return [
-        Payment(**{attr: pay.get(attr, None) for attr in attrs["payment"]})
+        Payment(
+            **{attr: pay.get(attr, None) for attr in ATTRS["payment"]},
+            order_id=order["order_id"],
+        )
         for pay in order["payment_transactions"]
     ]
 
@@ -93,7 +112,7 @@ def offer(order: dict) -> list[Offer]:
         return []
     return [
         Offer(
-            **{attr: offer.get(attr, None) for attr in attrs["offers_data"]},
+            **{attr: offer.get(attr, None) for attr in ATTRS["offers_data"]},
             order_id=order["order_id"],
             coupon_applied=order["coupon_applied"],
         )
