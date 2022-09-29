@@ -3,7 +3,7 @@ from collections import Counter
 from itertools import groupby, takewhile
 
 from ambrosial.swiggy import Swiggy
-from ambrosial.swiggy.order import Offer, Order
+from ambrosial.swiggy.datamodel.order import Offer, Order
 
 
 class OrderAnalytics:

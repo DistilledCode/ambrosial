@@ -45,4 +45,4 @@ repos:
     hooks:
       - id: mypy
         args: [--config-file, setup.cfg]
-        additional_dependencies: [tokenize-rt==4.2.1]
+        additional_dependencies: [tokenize-rt==4.2.1, pydantic>=1.9.0]

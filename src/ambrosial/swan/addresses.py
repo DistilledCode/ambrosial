@@ -3,8 +3,8 @@ from collections import Counter, defaultdict
 from typing import Union
 
 from ambrosial.swiggy import Swiggy
-from ambrosial.swiggy.address import Address
-from ambrosial.swiggy.order import Order
+from ambrosial.swiggy.datamodel.address import Address
+from ambrosial.swiggy.datamodel.order import Order
 
 
 class AddressAnalytics:

@@ -4,7 +4,7 @@ from statistics import mean
 from typing import Any, Optional
 
 from ambrosial.swiggy import Swiggy
-from ambrosial.swiggy.item import Item
+from ambrosial.swiggy.datamodel.item import Item
 
 
 class ItemAnalytics:

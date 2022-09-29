@@ -11,10 +11,10 @@ from requests import get
 import ambrosial.swiggy.convert as convert
 import ambrosial.swiggy.iohandler as ioh
 import ambrosial.swiggy.utils as utils
-from ambrosial.swiggy.address import Address
-from ambrosial.swiggy.item import Item
-from ambrosial.swiggy.order import Offer, Order, Payment
-from ambrosial.swiggy.restaurant import Restaurant
+from ambrosial.swiggy.datamodel.address import Address
+from ambrosial.swiggy.datamodel.item import Item
+from ambrosial.swiggy.datamodel.order import Offer, Order, Payment
+from ambrosial.swiggy.datamodel.restaurant import Restaurant
 
 
 class Swiggy:

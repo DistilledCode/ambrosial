@@ -3,7 +3,7 @@ from itertools import chain
 from typing import Union
 
 from ambrosial.swiggy import Swiggy
-from ambrosial.swiggy.restaurant import Restaurant
+from ambrosial.swiggy.datamodel.restaurant import Restaurant
 
 
 class RestaurantAnalytics:
