@@ -22,14 +22,16 @@ class OrderAnalytics:
     def tseries_amount(self, bins: str = "year+month_") -> dict:
         crb = self._chronoligally_binned(bins)
         return {
-            " ".join(str(i) for i in key): sum(order.order_total for order in list(val))
+            " ".join(str(i).rjust(2, "0") for i in key): sum(
+                order.order_total for order in list(val)
+            )
             for key, val in groupby(crb, lambda x: self._cmp(x, bins))
         }
 
     def tseries_orders(self, bins: str = "year+month_") -> dict:
         crb = self._chronoligally_binned(bins)
         return {
-            " ".join(str(i) for i in key): len(list(val))
+            " ".join(str(i).rjust(2, "0") for i in key): len(list(val))
             for key, val in groupby(crb, lambda x: self._cmp(x, bins))
         }
 
@@ -40,7 +42,7 @@ class OrderAnalytics:
         """
         crb = self._chronoligally_binned(bins)
         return {
-            " ".join(str(i) for i in key): dict(
+            " ".join(str(i).rjust(2, "0") for i in key): dict(
                 sum([Counter(order.charges) for order in orders], Counter())
             )
             for key, orders in groupby(crb, lambda x: self._cmp(x, bins))
@@ -66,7 +68,7 @@ class OrderAnalytics:
             min_time = min(
                 orders_, key=lambda x: (x.mCancellationTime, x.delivery_time_in_seconds)
             )
-            deltime_dict[" ".join(str(i) for i in key)] = {
+            deltime_dict[" ".join(str(i).rjust(2, "0") for i in key)] = {
                 "deliveries": len(deltime),
                 "mean_promised": round(st.mean(sla_time), 4),
                 "mean_actual": round(st.mean(deltime), 4),
@@ -93,7 +95,7 @@ class OrderAnalytics:
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
             # values of groupby() are exhausted once iterated over. thus making a copy
             orders_ = list(orders)
-            punctuality_dict[" ".join(str(i) for i in key)] = {
+            punctuality_dict[" ".join(str(i).rjust(2, "0") for i in key)] = {
                 "on_time": sum(
                     1
                     for order in orders_
@@ -125,7 +127,7 @@ class OrderAnalytics:
                 if not order.mCancellationTime
             )
             orders_placed = sum(1 for order in orders_ if not order.mCancellationTime)
-            distance_dict[" ".join(str(i) for i in key)] = {
+            distance_dict[" ".join(str(i).rjust(2, "0") for i in key)] = {
                 "distance_covered": round(dist_travelled, 4),
                 "orders_placed": orders_placed,
                 "distance_cov_per_order": round(dist_travelled / orders_placed, 4),
@@ -139,7 +141,7 @@ class OrderAnalytics:
             orders_ = list(orders)
             free_deliveries = sum(order.free_delivery_discount_hit for order in orders_)
             other_benefits = sum(order.trade_discount for order in orders_)
-            super_benefit[" ".join(str(i) for i in key)] = {
+            super_benefit[" ".join(str(i).rjust(2, "0") for i in key)] = {
                 "total_benefit": round(free_deliveries + other_benefits, 3),
                 "other_super_discount": round(other_benefits, 3),
                 "free_deliveries": {
@@ -161,7 +163,7 @@ class OrderAnalytics:
             orders_ = list(orders)
             furthest = max(orders_, key=lambda x: x.restaurant.customer_distance[1])
             f_rest = furthest.restaurant
-            furthest_dict[" ".join(str(i) for i in key)] = {
+            furthest_dict[" ".join(str(i).rjust(2, "0") for i in key)] = {
                 "distance_covered": furthest.restaurant.customer_distance[1],
                 "restaurant": f"{f_rest.name}, {f_rest.area_name}, {f_rest.city_name}",
                 "items": [item.name for item in furthest.items],

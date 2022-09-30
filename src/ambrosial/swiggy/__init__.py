@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, Optional
 from warnings import warn
 
-import browser_cookie3
 from requests import get
 
 import ambrosial.swiggy.convert as convert
@@ -22,13 +21,14 @@ class Swiggy:
         self.ddav = ddav
         self._o_url = "https://www.swiggy.com/dapi/order/all"
         self._p_url = "https://www.swiggy.com/mapi/profile/info"
-        self._cookie_jar = browser_cookie3.load("www.swiggy.com")
+        self._domain = "www.swiggy.com"
         self.orders_raw: list[dict[str, Any]] = []
         self.orders_refined: list[dict[str, Any]] = []
         self._response_json: dict = {}
         self._customer_info: dict = {}
         self._fetched = False
         self._path = Path.home() / ".ambrosial" / "data"
+        self._cookie_jar = utils.get_cookies("www.swiggy.com")
         utils.create_save_path(self._path)
 
     @property

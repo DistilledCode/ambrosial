@@ -1,8 +1,10 @@
-from http.cookiejar import Cookie
+from http.cookiejar import Cookie, CookieJar
+from http.cookies import CookieError
 from pathlib import Path
 from time import time
 from typing import Any, Union
 
+import browser_cookie3
 from requests import HTTPError, Response
 
 
@@ -133,3 +135,10 @@ def validate_response(response: Response) -> None:
     resp_json = response.json()
     if not resp_json["statusCode"] == 0:
         raise HTTPError(f"Bad Response: {resp_json['statusMessage']}")
+
+
+def get_cookies(domain_name: str) -> CookieJar:
+    cookie_jar = browser_cookie3.load(domain_name)
+    if not len(cookie_jar) > 0:
+        raise CookieError(f"{repr(domain_name)}: No cookies found.")
+    return cookie_jar
