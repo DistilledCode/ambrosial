@@ -176,7 +176,9 @@ class OrderAnalytics:
 
     def _cmp(self, order: Order, bins: str, chrono: bool = False) -> tuple:
         # TODO: include an option to groupby according to custom strftime string
-        bin_ = {attr for attr in bins.split("+") if attr}
+        bin_ = [attr for attr in bins.split("+") if attr]
+        # cannot use set() as it doesnot preserve order
+        bin_ = list(dict.fromkeys(bin_))
         attr_mapping = {
             "hour": order.order_time.hour,
             "day": order.order_time.day,
