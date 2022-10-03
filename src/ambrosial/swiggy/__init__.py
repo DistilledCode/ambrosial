@@ -27,9 +27,9 @@ class Swiggy:
         self._response_json: dict = {}
         self._customer_info: dict = {}
         self._fetched = False
-        self._path = Path.home() / ".ambrosial" / "data"
+        self._data_path = Path.home() / ".ambrosial" / "data"
         self._cookie_jar = utils.get_cookies("www.swiggy.com")
-        utils.create_save_path(self._path)
+        utils.create_path(self._data_path)
 
     @property
     def _is_exhausted(self) -> bool:
@@ -141,18 +141,18 @@ class Swiggy:
         )
 
     def savej(self, fname: str = "orders.json") -> None:
-        ioh.savej(self._path / fname, self.orders_raw)
+        ioh.savej(self._data_path / fname, self.orders_raw)
 
     def saveb(self, fname: str = "orders.msgpack") -> None:
-        ioh.saveb(self._path / fname, self.orders_raw)
+        ioh.saveb(self._data_path / fname, self.orders_raw)
 
     def loadj(self, fname: str = "orders.json") -> None:
-        self.orders_raw = ioh.loadj(self._path / fname)
+        self.orders_raw = ioh.loadj(self._data_path / fname)
         self.orders_refined = self._get_processed_order()
         self._fetched = True
 
     def loadb(self, fname: str = "orders.msgpack") -> None:
-        self.orders_raw = ioh.loadb(self._path / fname)
+        self.orders_raw = ioh.loadb(self._data_path / fname)
         self.orders_refined = self._get_processed_order()
         self._fetched = True
 

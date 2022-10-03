@@ -125,7 +125,7 @@ def get_empty_sid() -> Cookie:
     )
 
 
-def create_save_path(path_: Path) -> None:
+def create_path(path_: Path) -> None:
     if path_.exists() is False:
         path_.mkdir(parents=True, exist_ok=True)
 

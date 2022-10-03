@@ -1,10 +1,13 @@
+from pathlib import Path
 from random import choice, shuffle
 from typing import Any
 
 import stylecloud
 
+import ambrosial.swich.utils as utils
 from ambrosial.swan import SwiggyAnalytics
-from ambrosial.swich.utils import get_curr_time
+
+_OUTPUT_PATH = utils.get_output_folder(code="wc")
 
 
 class WordCloud:
@@ -13,65 +16,80 @@ class WordCloud:
 
     def item_category(
         self,
+        path: Path = _OUTPUT_PATH,
+        fname: str = "item_category.png",
         freq_weight: bool = False,
         **kwargs: dict[str, Any],
     ) -> None:
         data = self.swan.items.group("category_details")
         self._make_wc(
             data=data,
-            fname="wcloud_item_category.png",
+            path=path,
+            fname=fname,
             freq_weight=freq_weight,
             kwargs=kwargs,
         )
 
     def item_name(
         self,
+        path: Path = _OUTPUT_PATH,
+        fname: str = "item_name.png",
         freq_weight: bool = True,
         **kwargs: dict[str, Any],
     ) -> None:
         data = self.swan.items.group("name")
         self._make_wc(
             data=data,
-            fname="wcloud_item_name.png",
+            path=path,
+            fname=fname,
             freq_weight=freq_weight,
             kwargs=kwargs,
         )
 
     def restaurant_cuisine(
         self,
+        path: Path = _OUTPUT_PATH,
+        fname: str = "restaurant_cuisine.png",
         freq_weight: bool = False,
         **kwargs: dict[str, Any],
     ) -> None:
         data = self.swan.restaurants.cuisines()
         self._make_wc(
             data=data,
-            fname="wcloud_restaurant_cuisine.png",
+            path=path,
+            fname=fname,
             freq_weight=freq_weight,
             kwargs=kwargs,
         )
 
     def restaurant_name(
         self,
+        path: Path = _OUTPUT_PATH,
+        fname: str = "restaurant_name.png",
         freq_weight: bool = True,
         **kwargs: dict[str, Any],
     ) -> None:
         data = self.swan.restaurants.group("name")
         self._make_wc(
             data=data,
-            fname="wcloud_restaurant_name.png",
+            path=path,
+            fname=fname,
             freq_weight=freq_weight,
             kwargs=kwargs,
         )
 
     def coupon_code(
         self,
+        path: Path = _OUTPUT_PATH,
+        fname: str = "coupon_code.png",
         freq_weight: bool = True,
         **kwargs: dict[str, Any],
     ) -> None:
         data = self.swan.offers.group("coupon_applied")
         self._make_wc(
             data=data,
-            fname="wcloud_coupon_code.png",
+            path=path,
+            fname=fname,
             freq_weight=freq_weight,
             kwargs=kwargs,
         )
@@ -79,32 +97,13 @@ class WordCloud:
     def _make_wc(
         self,
         data: dict[str, int],
+        path: Path,
         fname: str,
         freq_weight: bool,
         kwargs: dict[str, Any],
     ) -> None:
-        icons = (
-            "fas fa-ice-cream",
-            "fas fa-bread-slice",
-            "fas fa-pepper-hot",
-            "fas fa-fish",
-            "fas fa-wine-glass",
-            "fas fa-drumstick-bite",
-            "fas fa-bone",
-        )
-        palettes = (
-            "cartocolors.sequential.Peach_7",
-            "cartocolors.sequential.BluGrn_7",
-            "cartocolors.sequential.Purp_7",
-            "cartocolors.sequential.agSunset_7_r",
-            "lightbartlein.sequential.Blues7_7",
-            "cmocean.sequential.Matter_20",
-            "colorbrewer.diverging.Spectral_11",
-            "colorbrewer.diverging.RdYlBu_9",
-            "colorbrewer.diverging.RdBu_11",
-            "cartocolors.diverging.Tropic_7",
-            "lightbartlein.diverging.BlueDarkOrange12_12",
-        )
+
+        save_path = path / f"{utils.get_curr_time()}{fname}"
         word_list = []
         for key, value in data.items():
             if freq_weight:
@@ -115,10 +114,10 @@ class WordCloud:
         stylecloud.gen_stylecloud(
             text=",".join(word_list),
             size=kwargs.get("size", 1000),
-            icon_name=kwargs.get("icon_name", choice(icons)),
-            palette=kwargs.get("palette", choice(palettes)),
+            icon_name=kwargs.get("icon_name", choice(utils.WC_ICONS)),
+            palette=kwargs.get("palette", choice(utils.WC_PALETTES)),
             max_font_size=kwargs.get("max_font_size", 150),
             background_color=kwargs.get("background_color", "#191919"),
             gradient=kwargs.get("gradient", "vertical"),
-            output_name=f"{get_curr_time()}{fname}",
+            output_name=save_path,
         )
