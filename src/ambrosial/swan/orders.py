@@ -1,6 +1,7 @@
 import statistics as st
 from collections import Counter
 from itertools import groupby, takewhile
+from typing import Any
 
 from ambrosial.swiggy import Swiggy
 from ambrosial.swiggy.datamodel.order import Offer, Order
@@ -11,7 +12,10 @@ class OrderAnalytics:
         self.swiggy = swiggy
         self.all_orders: list[Order] = self.swiggy.get_orders()
 
-    def group(self, attr: str) -> dict:
+    def group(self) -> None:
+        raise NotImplementedError("Each order is unique. Same as Swiggy.get_orders()")
+
+    def group_by(self, attr: str) -> dict[Any, int]:
         attrs = [i for i, j in Order.__annotations__.items() if j.__hash__ is not None]
         if attr not in list(Order.__annotations__):
             raise TypeError(f"type object 'Order' has no attribute {repr(attr)}")
@@ -205,7 +209,10 @@ class OfferAnalytics:
         self.swiggy = swiggy
         self.all_offers = self.swiggy.get_offers()
 
-    def group(self, attr: str) -> dict:
+    def group(self) -> None:
+        raise NotImplementedError("Each offer is unique. Same as Swiggy.get_offers()")
+
+    def group_by(self, attr: str) -> dict[Any, int]:
         if attr not in list(Offer.__annotations__):
             raise TypeError(f"type object 'Offer' has no attribute {repr(attr)}")
         if attr == "discount_share":

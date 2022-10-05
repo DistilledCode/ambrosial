@@ -12,18 +12,21 @@ class ItemAnalytics:
         self.swiggy = swiggy
         self.all_items = self.swiggy.get_items()
 
-    def group(self, attr: str = None) -> dict:
+    def group(self) -> dict[Item, int]:
+        return dict(Counter(self.all_items).most_common())
+
+    def group_by(self, attr: str) -> dict[str, int]:
+        if attr == "item_charges":
+            raise NotImplementedError("unhashable attribute type: <dict>")
         obj_dict = {
-            None: self._get_everything,
             "addons": self._get_addons_detail,
             "variants": self._get_variants_detail,
             "category_details": self._get_category_details,
-            "item_charges": self._get_item_charges,
         }
-        if (x := obj_dict.get(attr, None)) is not None:
-            return dict(x())  # type:ignore
-        else:
-            return dict(self._get_attr_detail(str(attr)))  # to silence mypy
+
+        if attr in obj_dict:
+            return dict(obj_dict[attr]())
+        return dict(self._get_attr_detail(attr))
 
     def history(self, item_id: Optional[str] = None) -> dict:
         hist = defaultdict(list)
@@ -70,9 +73,6 @@ class ItemAnalytics:
             return True
         raise ValueError(f"order item of id = {repr(item_id)} does not exist.")
 
-    def _get_everything(self) -> list[tuple[Item, int]]:
-        return Counter(self.all_items).most_common()
-
     def _get_attr_detail(self, attr: str) -> list[tuple[Any, int]]:
         return Counter(getattr(item, attr) for item in self.all_items).most_common()
 
@@ -94,6 +94,3 @@ class ItemAnalytics:
         return Counter(
             item.category_details["category"] for item in self.all_items
         ).most_common()
-
-    def _get_item_charges(self) -> None:
-        raise NotImplementedError("unhashable attribute type: <dict>")

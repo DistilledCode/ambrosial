@@ -1,6 +1,5 @@
 from collections import Counter, defaultdict
 from itertools import chain
-from typing import Union
 
 from ambrosial.swiggy import Swiggy
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
@@ -15,15 +14,18 @@ class RestaurantAnalytics:
             self._cuisine[restaurant].extend(i.lower() for i in restaurant.cuisine)
             restaurant.cuisine = list(set(self._cuisine[restaurant]))
 
-    def group(self, attr: str = None) -> dict[Union[Restaurant, str], int]:
-        if attr is None:
-            return dict(Counter(self.all_restaurants).most_common())
+    def group(self) -> dict[Restaurant, int]:
+        return dict(Counter(self.all_restaurants).most_common())
+
+    def group_by(self, attr: str) -> dict[str, int]:
         if attr == "cuisine":
-            raise NotImplementedError("use .cuisines() method instead")
+            raise NotImplementedError("use .cuisines() instead.")
         if attr == "coordinates":
-            raise TypeError(f"attribute {repr(attr)} of 'Restaurant' is unhashable")
+            raise TypeError(f"Unhashable attribute of Restaurant: {repr(attr)}")
         return dict(
-            Counter(getattr(i, attr) for i in self.all_restaurants).most_common()
+            Counter(
+                getattr(restaurant, attr) for restaurant in self.all_restaurants
+            ).most_common()
         )
 
     def cuisines(self) -> dict:

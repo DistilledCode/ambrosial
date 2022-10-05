@@ -1,6 +1,5 @@
 import statistics as st
 from collections import Counter, defaultdict
-from typing import Union
 
 from ambrosial.swiggy import Swiggy
 from ambrosial.swiggy.datamodel.address import Address
@@ -13,9 +12,10 @@ class AddressAnalytics:
         self.all_orders: list[Order] = self.swiggy.get_orders()
         self.all_addresses: list[Address] = self.swiggy.get_addresses()
 
-    def group(self, attr: str = None) -> dict[Union[Address, str], int]:
-        if attr is None:
-            return dict(Counter(self.all_addresses).most_common())
+    def group(self) -> dict[Address, int]:
+        return dict(Counter(self.all_addresses).most_common())
+
+    def group_by(self, attr: str) -> dict[str, int]:
         return dict(Counter(getattr(i, attr) for i in self.all_addresses).most_common())
 
     def coordinates(self) -> list[dict]:
@@ -58,10 +58,10 @@ class AddressAnalytics:
         }
 
     def _get_key(self, order: Order) -> str:
-        return (
+        return str(
             f"{order.address.add_id}_{order.address.version}"
             if self.swiggy.ddav
-            else order.address.add_id
+            else order.address.add_id  # because add_id is int
         )
 
     def _conv_factor(self, unit: str) -> int:
