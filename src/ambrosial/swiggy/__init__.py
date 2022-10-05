@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Optional
 from warnings import warn
 
-from requests import get
+from requests import Response, get
 
 import ambrosial.swiggy.convert as convert
 import ambrosial.swiggy.iohandler as ioh
@@ -14,6 +14,7 @@ from ambrosial.swiggy.datamodel.address import Address
 from ambrosial.swiggy.datamodel.item import Item
 from ambrosial.swiggy.datamodel.order import Offer, Order, Payment
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
+from ambrosial.swiggy.helper import find_order
 
 
 class Swiggy:
@@ -24,8 +25,9 @@ class Swiggy:
         self._domain = "www.swiggy.com"
         self.orders_raw: list[dict[str, Any]] = []
         self.orders_refined: list[dict[str, Any]] = []
+        self._response: Response = Response()
         self._response_json: dict = {}
-        self._customer_info: dict = {}
+        self._customer_info: utils.UserInfo = {}
         self._fetched = False
         self._data_path = Path.home() / ".ambrosial" / "data"
         self._cookie_jar = utils.get_cookies("www.swiggy.com")
@@ -36,8 +38,8 @@ class Swiggy:
         utils.validate_response(self._response)
         return not bool(self._response_json["data"]["orders"])
 
-    def get_account_info(self) -> dict:
-        if self._customer_info:
+    def get_account_info(self) -> utils.UserInfo:
+        if self._customer_info is not None:
             return self._customer_info
         temp_cookie = self._cookie_jar
         temp_cookie.set_cookie(utils.get_empty_sid())
@@ -45,15 +47,15 @@ class Swiggy:
         self._response_json = self._response.json()
         utils.validate_response(self._response)
         data = self._response_json["data"]
-        self._customer_info = {
-            "customer_id": data["customer_id"],
-            "name": data["name"],
-            "mobile": data["mobile"],
-            "email": data["email"],
-            "emailVerified": data["emailVerified"],
-            "super_status": data["optional_map"]["IS_SUPER"]["value"]["superStatus"],
-            "user_registered": data["user_registered"],
-        }
+        self._customer_info = utils.UserInfo(
+            customer_id=data["customer_id"],
+            name=data["name"],
+            mobile=data["mobile"],
+            email=data["email"],
+            emailVerified=data["emailVerified"],
+            super_status=data["optional_map"]["IS_SUPER"]["value"]["superStatus"],
+            user_registered=data["user_registered"],
+        )
         return self._customer_info
 
     def fetch_orders(self) -> None:
@@ -74,7 +76,7 @@ class Swiggy:
 
     def get_order(self, id_: int) -> Order:
         return convert.order(
-            utils.find_order(
+            find_order(
                 "order",
                 self.orders_refined,
                 id_,
@@ -86,7 +88,7 @@ class Swiggy:
         return [convert.order(order, self.ddav) for order in self.orders_refined]
 
     def get_item(self, id_: int) -> list[Item]:
-        return convert.item(utils.find_order("item", self.orders_refined, id_))
+        return convert.item(find_order("item", self.orders_refined, id_))
 
     def get_items(self) -> list[Item]:
         return list(
@@ -95,7 +97,7 @@ class Swiggy:
 
     def get_restaurant(self, id_: int) -> Restaurant:
         return convert.restaurant(
-            utils.find_order(
+            find_order(
                 "restaurant",
                 self.orders_refined,
                 id_,
@@ -111,7 +113,7 @@ class Swiggy:
             warn(f"version number will be ignored as {self.ddav=}")
         if ver is None and self.ddav is True:
             raise KeyError(f"provide version number of address as {self.ddav=}")
-        order_ = utils.find_order(
+        order_ = find_order(
             "address",
             self.orders_refined,
             id_,
@@ -123,7 +125,7 @@ class Swiggy:
         return [convert.address(order, self.ddav) for order in self.orders_refined]
 
     def get_offer(self, id_: int) -> list[Offer]:
-        return convert.offer(utils.find_order("offer", self.orders_refined, id_))
+        return convert.offer(find_order("offer", self.orders_refined, id_))
 
     def get_offers(self) -> list[Offer]:
         return list(
@@ -131,7 +133,7 @@ class Swiggy:
         )
 
     def get_payment(self, id_: int) -> list[Payment]:
-        return convert.payment(utils.find_order("payment", self.orders_refined, id_))
+        return convert.payment(find_order("payment", self.orders_refined, id_))
 
     def get_payments(self) -> list[Payment]:
         return list(
@@ -156,7 +158,7 @@ class Swiggy:
         self.orders_refined = self._get_processed_order()
         self._fetched = True
 
-    def _send_req(self, order_id: Optional[int]) -> None:
+    def _send_req(self, order_id: Optional[int] = None) -> None:
         param = {} if order_id is None else {"order_id": order_id}
         self._response = get(self._o_url, cookies=self._cookie_jar, params=param)
         self._response_json = self._response.json()
