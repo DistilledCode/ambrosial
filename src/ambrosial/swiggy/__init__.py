@@ -18,7 +18,7 @@ from ambrosial.swiggy.helper import find_order
 
 
 class Swiggy:
-    def __init__(self, ddav: bool = False) -> None:
+    def __init__(self, path: Optional[Path] = None, ddav: bool = False) -> None:
         self.ddav = ddav
         self._o_url = "https://www.swiggy.com/dapi/order/all"
         self._p_url = "https://www.swiggy.com/mapi/profile/info"
@@ -29,7 +29,8 @@ class Swiggy:
         self._response_json: dict = {}
         self._customer_info: utils.UserInfo = {}
         self._fetched = False
-        self._data_path = Path.home() / ".ambrosial" / "data"
+        self.home_path = Path.home() / ".ambrosial" if path is None else path
+        self._data_path = self.home_path / "data"
         self._cookie_jar = utils.get_cookies("www.swiggy.com")
         utils.create_path(self._data_path)
 

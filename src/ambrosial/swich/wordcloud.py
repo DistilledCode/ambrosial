@@ -1,27 +1,28 @@
 from pathlib import Path
 from random import choice, shuffle
-from typing import Any
+from typing import Any, Optional
 
 import stylecloud
 
-import ambrosial.swich.utils as utils
 from ambrosial.swan import SwiggyAnalytics
-
-_OUTPUT_PATH = utils.get_output_folder(code="wc")
+from ambrosial.swich.utils import WC_ICONS, WC_PALETTES, get_curr_time
+from ambrosial.swiggy.utils import create_path
 
 
 class WordCloud:
     def __init__(self, swan: SwiggyAnalytics) -> None:
         self.swan = swan
+        self.save_path = self.swan.swiggy.home_path / "swich" / "word_cloud"
+        create_path(self.save_path)
 
     def item_category(
         self,
-        path: Path = _OUTPUT_PATH,
+        path: Optional[Path] = None,
         fname: str = "item_category.png",
         freq_weight: bool = False,
         **kwargs: dict[str, Any],
     ) -> None:
-        data = self.swan.items.group("category_details")
+        data = self.swan.items.group_by("category_details")
         self._make_wc(
             data=data,
             path=path,
@@ -32,12 +33,12 @@ class WordCloud:
 
     def item_name(
         self,
-        path: Path = _OUTPUT_PATH,
+        path: Optional[Path] = None,
         fname: str = "item_name.png",
         freq_weight: bool = True,
         **kwargs: dict[str, Any],
     ) -> None:
-        data = self.swan.items.group("name")
+        data = self.swan.items.group_by("name")
         self._make_wc(
             data=data,
             path=path,
@@ -48,7 +49,7 @@ class WordCloud:
 
     def restaurant_cuisine(
         self,
-        path: Path = _OUTPUT_PATH,
+        path: Optional[Path] = None,
         fname: str = "restaurant_cuisine.png",
         freq_weight: bool = False,
         **kwargs: dict[str, Any],
@@ -64,12 +65,12 @@ class WordCloud:
 
     def restaurant_name(
         self,
-        path: Path = _OUTPUT_PATH,
+        path: Optional[Path] = None,
         fname: str = "restaurant_name.png",
         freq_weight: bool = True,
         **kwargs: dict[str, Any],
     ) -> None:
-        data = self.swan.restaurants.group("name")
+        data = self.swan.restaurants.group_by("name")
         self._make_wc(
             data=data,
             path=path,
@@ -80,12 +81,12 @@ class WordCloud:
 
     def coupon_code(
         self,
-        path: Path = _OUTPUT_PATH,
+        path: Optional[Path] = None,
         fname: str = "coupon_code.png",
         freq_weight: bool = True,
         **kwargs: dict[str, Any],
     ) -> None:
-        data = self.swan.offers.group("coupon_applied")
+        data = self.swan.offers.group_by("coupon_applied")
         self._make_wc(
             data=data,
             path=path,
@@ -97,13 +98,14 @@ class WordCloud:
     def _make_wc(
         self,
         data: dict[str, int],
-        path: Path,
+        path: Optional[Path],
         fname: str,
         freq_weight: bool,
         kwargs: dict[str, Any],
     ) -> None:
 
-        save_path = path / f"{utils.get_curr_time()}{fname}"
+        if path is None:
+            save_path = self.save_path / f"{get_curr_time()}{fname}"
         word_list = []
         for key, value in data.items():
             if freq_weight:
@@ -114,8 +116,8 @@ class WordCloud:
         stylecloud.gen_stylecloud(
             text=",".join(word_list),
             size=kwargs.get("size", 1000),
-            icon_name=kwargs.get("icon_name", choice(utils.WC_ICONS)),
-            palette=kwargs.get("palette", choice(utils.WC_PALETTES)),
+            icon_name=kwargs.get("icon_name", choice(WC_ICONS)),
+            palette=kwargs.get("palette", choice(WC_PALETTES)),
             max_font_size=kwargs.get("max_font_size", 150),
             background_color=kwargs.get("background_color", "#191919"),
             gradient=kwargs.get("gradient", "vertical"),
