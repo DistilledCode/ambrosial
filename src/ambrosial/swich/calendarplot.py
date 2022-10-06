@@ -4,8 +4,8 @@ from typing import Any, Literal, Optional
 import july
 import matplotlib.pyplot as plt
 
-import ambrosial.swich.helpers as helpers
 from ambrosial.swan import SwiggyAnalytics
+from ambrosial.swich.helper.calendarplot import get_details, july_calmon_args
 
 BINS = "year+month+day"
 
@@ -82,9 +82,9 @@ class CalendarPlot:
             "on": f"Number of orders in {calendar.month_abbr[month]}",
             "oa": f"Amount spent in {calendar.month_abbr[month]}",
         }
-        date_range_, values = helpers.get_details(code, self.swan, date_range, BINS)
+        date_range_, values = get_details(code, self.swan, date_range, BINS)
         kwargs.setdefault("title", default_title.get(code))
-        jargs = helpers.july_calmon_args(kwargs)
+        jargs = july_calmon_args(kwargs)
         july.month_plot(dates=date_range_, data=values, month=month, **jargs)
         plt.suptitle(kwargs["title"], fontsize="x-large", y=1.0)
         if show_plot:
@@ -101,7 +101,7 @@ class CalendarPlot:
             "on": "Number of orders",
             "oa": "Amount Spent",
         }
-        date_range_, values = helpers.get_details(code, self.swan, date_range, BINS)
+        date_range_, values = get_details(code, self.swan, date_range, BINS)
         kwargs.setdefault("cmap", "golden")
         kwargs.setdefault("title", default_title.get(code))
         july.calendar_plot(dates=date_range_, data=values, **kwargs)

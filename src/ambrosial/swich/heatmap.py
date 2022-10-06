@@ -3,8 +3,8 @@ from typing import Any, Literal, Optional
 import july
 import matplotlib.pyplot as plt
 
-import ambrosial.swich.helpers as helpers
 from ambrosial.swan import SwiggyAnalytics
+from ambrosial.swich.helper.heatmap import get_details, july_heatmap_args
 
 BINS = "year+month+day"
 
@@ -46,8 +46,8 @@ class HeatMap:
         show_plot: bool,
         kwargs: dict[str, Any],
     ) -> None:
-        date_range_, values = helpers.get_details(code, self.swan, date_range, BINS)
-        jargs = helpers.july_heatmap_args(kwargs)
+        date_range_, values = get_details(code, self.swan, date_range, BINS)
+        jargs = july_heatmap_args(kwargs)
         july.heatmap(dates=date_range_, data=values, **jargs)
         if show_plot:
             plt.show()

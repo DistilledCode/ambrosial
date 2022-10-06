@@ -1,5 +1,5 @@
 from ambrosial.swan import SwiggyAnalytics
-from ambrosial.swich.calplot import CalendarPlot
+from ambrosial.swich.calendarplot import CalendarPlot
 from ambrosial.swich.heatmap import HeatMap
 from ambrosial.swich.wordcloud import WordCloud
 
