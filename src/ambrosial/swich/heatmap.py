@@ -17,7 +17,7 @@ class HeatMap:
         self,
         date_range: Optional[tuple[str, str]] = None,
         show_plot: bool = False,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         self._heatmap_plot(
             code="oa",
@@ -30,7 +30,7 @@ class HeatMap:
         self,
         date_range: Optional[tuple[str, str]] = None,
         show_plot: bool = False,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         self._heatmap_plot(
             code="on",

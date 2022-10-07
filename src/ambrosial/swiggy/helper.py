@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any, Literal, Optional, Union
 
 
 def _order(
@@ -35,7 +35,7 @@ def _restaurant(
 def _address(
     order_list: list[dict[str, Any]],
     obj_id: Union[str, int],
-    **kwargs: dict[str, Any],
+    **kwargs: Union[Optional[int], bool],
 ) -> dict:
     ddav = kwargs["ddav"]
     ver = kwargs["ver"]
@@ -77,10 +77,10 @@ def _offer(
 
 
 def find_order(
-    obj: str,
+    obj: Literal["order", "item", "restaurant", "payment", "offer", "address"],
     order_list: list[dict[str, Any]],
     obj_id: Union[str, int],
-    **kwargs: dict[str, Any],
+    **kwargs: Union[Optional[int], bool],
 ) -> dict:
 
     if obj == "address":

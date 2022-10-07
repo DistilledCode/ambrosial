@@ -1,9 +1,10 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, NonNegativeFloat, NonNegativeInt
+
+from ambrosial.swiggy.datamodel import ItemTypes
 
 
 class Item(BaseModel):
     rewardType: str
-    item_key: str
     has_variantv2: bool
     order_id: int
     restaurant_id: str
@@ -11,20 +12,20 @@ class Item(BaseModel):
     external_item_id: str
     name: str
     is_veg: bool
-    variants: tuple
-    addons: tuple
+    variants: ItemTypes.VARIANTS
+    addons: ItemTypes.ADDONS
     image: HttpUrl
-    quantity: int
-    free_item_quantity: int
-    total: float
-    subtotal: float
-    final_price: float
-    base_price: float
-    effective_item_price: float
-    packing_charges: float
-    category_details: dict[str, str]
-    item_charges: dict[str, float]
-    item_total_discount: float
+    quantity: NonNegativeInt
+    free_item_quantity: NonNegativeInt
+    total: NonNegativeFloat
+    subtotal: NonNegativeFloat
+    final_price: NonNegativeFloat
+    base_price: NonNegativeFloat
+    effective_item_price: NonNegativeFloat
+    packing_charges: NonNegativeFloat
+    category_details: ItemTypes.CATEGORY_DETAILS
+    item_charges: ItemTypes.ITEM_CHARGES
+    item_total_discount: NonNegativeFloat
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Item):

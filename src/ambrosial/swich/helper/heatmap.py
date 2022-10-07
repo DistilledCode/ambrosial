@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Any, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 
 from july.utils import date_range
 
@@ -24,7 +24,7 @@ def get_details(
     drange: Optional[tuple[str, str]],
     bins: str,
 ) -> tuple[list[date], list[int]]:
-    func_dict = {
+    func_dict: dict[str, Callable[..., tuple[list[date], list[int]]]] = {
         "oa": _get_order_amount_details,
         "on": _get_order_number_details,
     }

@@ -1,5 +1,7 @@
 from pydantic import BaseModel, HttpUrl
 
+from ambrosial.swiggy.datamodel import RestaurantTypes
+
 
 class Restaurant(BaseModel):
     rest_id: int
@@ -11,12 +13,12 @@ class Restaurant(BaseModel):
     city_name: str
     area_code: int
     area_name: str
-    cuisine: list
-    coordinates: dict[str, float]
+    cuisine: set[str]
+    coordinates: RestaurantTypes.COORDINATES
     customer_distance: tuple[str, float]
     cover_image: HttpUrl
     taxation_type: str
-    gst_category: str
+    gst_category: RestaurantTypes.GST_CATEGORY
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Restaurant):

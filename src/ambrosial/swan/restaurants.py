@@ -9,10 +9,10 @@ class RestaurantAnalytics:
     def __init__(self, swiggy: Swiggy) -> None:
         self.swiggy = swiggy
         self.all_restaurants: list[Restaurant] = self.swiggy.get_restaurants()
-        self._cuisine: dict[Restaurant, list] = defaultdict(list)
+        self._cuisine: dict[Restaurant, set[str]] = defaultdict(set)
         for restaurant in reversed(self.all_restaurants):
-            self._cuisine[restaurant].extend(i.lower() for i in restaurant.cuisine)
-            restaurant.cuisine = list(set(self._cuisine[restaurant]))
+            self._cuisine[restaurant] |= {i.lower() for i in restaurant.cuisine}
+            restaurant.cuisine = self._cuisine[restaurant]
 
     def group(self) -> dict[Restaurant, int]:
         return dict(Counter(self.all_restaurants).most_common())
@@ -39,7 +39,7 @@ class RestaurantAnalytics:
             ).most_common()
         )
 
-    def search_cuisine(self, cuisine: str, exact: bool = True) -> set:
+    def search_cuisine(self, cuisine: str, exact: bool = True) -> set[Restaurant]:
         # TODO: option to search multiple cuisines at once
         return (
             {

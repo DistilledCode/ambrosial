@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt
 
+from ambrosial.swiggy.datamodel import OfferTypes, OrderTypes
 from ambrosial.swiggy.datamodel.address import Address
 from ambrosial.swiggy.datamodel.item import Item
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
@@ -12,10 +13,10 @@ class Offer(BaseModel):
     order_id: int
     coupon_applied: str
     super_type: str
-    total_offer_discount: float
-    discount_share: dict[str, Union[int, float]]
+    total_offer_discount: NonNegativeFloat
     discount_type: str
     description: str
+    discount_share: OfferTypes.DISCOUNT_SHARE
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Offer):
@@ -32,7 +33,7 @@ class Payment(BaseModel):
     paymentMethod: str
     paymentMethodDisplayName: str
     transactionId: str
-    amount: float
+    amount: NonNegativeFloat
     paymentMeta: dict[str, Union[str, dict]]
     transactionStatus: str
     swiggyTransactionId: str
@@ -51,70 +52,69 @@ class Payment(BaseModel):
 
 
 class Order(BaseModel):
-    tipDetails: dict[str, Union[float, bool, str]]
+    tipDetails: OrderTypes.TIP_DETAILS
     order_id: int
     address: Address
     items: list[Item]
-    charges: dict[str, float]
+    charges: OrderTypes.CHARGES
     is_coupon_applied: bool
     offers_data: list[Offer]
     order_time: datetime
     customer_id: str
-    order_status: str
-    post_status: str
+    order_status: OrderTypes.ORDER_STATUS
+    post_status: OrderTypes.POST_STATUS
     order_type: str
-    order_placement_status: str
-    sla_time: int
-    delivery_boy: dict[str, Any]
+    sla_time: NonNegativeInt
+    delivery_boy: OrderTypes.DELIVERY_BOY
     restaurant: Restaurant
     payment_method: str
     payment_transaction: list[Payment]
-    order_delivery_status: str
-    ordered_time_in_seconds: int
-    delivered_time_in_seconds: int
-    delivery_time_in_seconds: int
-    order_total: int
-    order_total_with_tip: float
-    item_total: float
-    swiggy_money: float
-    order_discount_without_freebie: float
-    order_discount: float
-    coupon_discount: float
-    trade_discount: float
-    order_discount_effective: float
-    coupon_discount_effective: float
-    trade_discount_effective: float
-    free_delivery_discount_hit: int
-    freebie_discount_hit: int
-    super_specific_discount: float
-    rating_meta: dict[str, Any]
+    order_delivery_status: OrderTypes.ORDER_DELIVERY_STATUS
+    ordered_time_in_seconds: NonNegativeInt
+    delivered_time_in_seconds: NonNegativeInt
+    delivery_time_in_seconds: NonNegativeInt
+    order_total: NonNegativeInt
+    order_total_with_tip: NonNegativeFloat
+    item_total: NonNegativeFloat
+    swiggy_money: NonNegativeFloat
+    order_discount_without_freebie: NonNegativeFloat
+    order_discount: NonNegativeFloat
+    coupon_discount: NonNegativeFloat
+    trade_discount: NonNegativeFloat
+    order_discount_effective: NonNegativeFloat
+    coupon_discount_effective: NonNegativeFloat
+    trade_discount_effective: NonNegativeFloat
+    free_delivery_discount_hit: NonNegativeInt
+    freebie_discount_hit: NonNegativeInt
+    super_specific_discount: NonNegativeFloat
+    rating_meta: OrderTypes.RATING_META
     customer_user_agent: str
     # ! coordinates from where the order was placed?
     billing_lat: float
     billing_lng: float
     payment_txn_id: str
     order_payment_method: str
-    is_refund_initiated: int
-    cust_lat_lng: dict[str, float]
+    is_refund_initiated: bool
+    cust_lat_lng: OrderTypes.CUST_LAT_LNG
     is_long_distance: bool
     on_time: bool
     sla_difference: int
-    actual_sla_time: int
-    payment_txn_status: str
-    rain_mode: str
+    actual_sla_time: NonNegativeInt
+    payment_txn_status: OrderTypes.PAYMENT_TXN_STATUS
+    rain_mode: int
     is_super_long_distance: bool
     device_id: str
     swuid: str
     sid: str
-    previous_cancellation_fee: int
-    coupon_type: str
+    previous_cancellation_fee: NonNegativeInt
+    coupon_type: OrderTypes.COUPON_TYPE
     coupon_description: str
-    mCancellationTime: int
-    configurations: dict[str, bool]
-    free_del_break_up: dict[str, Union[int, bool]]
+    mCancellationTime: NonNegativeInt
+    configurations: OrderTypes.CONFIGURATIONS
+    free_del_break_up: OrderTypes.FREE_DEL_BREAK_UP
     order_tags: list[str]
     updated_at: str
-    conservative_last_mile_distance: float
+    conservative_last_mile_distance: NonNegativeFloat
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Order):

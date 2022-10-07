@@ -28,13 +28,15 @@ class ItemAnalytics:
             return dict(obj_dict[attr]())
         return dict(self._get_attr_detail(attr))
 
-    def history(self, item_id: Optional[str] = None) -> dict:
+    def history(self, item_id: Optional[int] = None) -> dict:
         hist = defaultdict(list)
         for item in self.all_items:
             hist[item.item_id].append(
                 {
                     "order_id": item.order_id,
-                    "address_id": self.swiggy.get_order(item.order_id).address.add_id,
+                    "address_id": self.swiggy.get_order(
+                        item.order_id
+                    ).address.address_id,
                     "order_time": self.swiggy.get_order(item.order_id).order_time,
                 }
             )
@@ -42,7 +44,7 @@ class ItemAnalytics:
             return hist.get(item_id)  # type:ignore
         return dict(hist)
 
-    def summarise(self, item_id: str) -> dict:
+    def summarise(self, item_id: int) -> dict:
         self._is_valid_id(item_id)
         instances = [item for item in self.all_items if item.item_id == item_id]
         return {
@@ -68,7 +70,7 @@ class ItemAnalytics:
             else [item for item in self.all_items if name.lower() in item.name.lower()]
         )
 
-    def _is_valid_id(self, item_id: str) -> bool:
+    def _is_valid_id(self, item_id: int) -> bool:
         if item_id in [item.item_id for item in self.all_items]:
             return True
         raise ValueError(f"order item of id = {repr(item_id)} does not exist.")

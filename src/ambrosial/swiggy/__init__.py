@@ -118,7 +118,8 @@ class Swiggy:
             "address",
             self.orders_refined,
             id_,
-            kwarg={"ver": ver, "ddav": self.ddav},
+            ver=ver,
+            ddav=self.ddav,
         )
         return convert.address(order_, self.ddav)
 

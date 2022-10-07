@@ -28,7 +28,7 @@ ATTRS["restaurant"].remove("restaurant_cover_image")
 ATTRS["restaurant"].remove("restaurant_rest_id")
 ATTRS["restaurant"].remove("restaurant_rest_type")
 ATTRS["address"].remove("ddav")
-ATTRS["address"].remove("add_id")
+ATTRS["address"].remove("address_id")
 ATTRS["offers_data"].remove("order_id")
 ATTRS["offers_data"].remove("coupon_applied")
 ATTRS["payment"].remove("order_id")
@@ -91,7 +91,7 @@ def address(order: dict, ddav: bool) -> Address:
         **{
             attr: order["delivery_address"].get(attr, None) for attr in ATTRS["address"]
         },
-        add_id=order["delivery_address"]["id"],
+        address_id=order["delivery_address"]["id"],
     )
 
 

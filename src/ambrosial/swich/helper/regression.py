@@ -6,7 +6,7 @@ from ambrosial.swan import SwiggyAnalytics
 from ambrosial.swich.utils import remove_outliers
 
 
-def _df_order_amount(swan: SwiggyAnalytics, bins: str, **_: dict) -> pd.DataFrame:
+def _df_order_amount(swan: SwiggyAnalytics, bins: str, **_: bool) -> pd.DataFrame:
     data = swan.orders.tseries_amount(bins)
     df = pd.DataFrame(
         {
@@ -40,7 +40,7 @@ def _df_ordamt_ordfee(swan: SwiggyAnalytics, bins: str, ro: bool) -> pd.DataFram
     return pd.DataFrame({"x": total_fee, "y": total_amount, "color": fee_prcnt})
 
 
-def _df_ordtime_orddist(swan: SwiggyAnalytics, ro: bool, **_: dict) -> pd.DataFrame:
+def _df_ordtime_orddist(swan: SwiggyAnalytics, ro: bool, **_: str) -> pd.DataFrame:
     distance: list[float] = []
     time_taken: list[float] = []
     for order in swan.swiggy.get_orders():
@@ -55,7 +55,7 @@ def _df_ordtime_orddist(swan: SwiggyAnalytics, ro: bool, **_: dict) -> pd.DataFr
 def _df_delivery_punctuality_bool(
     swan: SwiggyAnalytics,
     ro: bool,
-    **_: dict,
+    **_: str,
 ) -> pd.DataFrame:
     orders = swan.swiggy.get_orders()
     delivery_time: list[float] = []
@@ -72,7 +72,7 @@ def _df_delivery_punctuality_bool(
 def _df_delivery_punctuality(
     swan: SwiggyAnalytics,
     ro: bool,
-    **_: dict,
+    **_: str,
 ) -> pd.DataFrame:
     orders = swan.swiggy.get_orders()
     act_time: list[int] = []
@@ -94,7 +94,7 @@ def get_dataframe(
     bins: str = "",
     ro: bool = True,
 ) -> pd.DataFrame:
-    func_dict: dict[str, Callable] = {
+    func_dict: dict[str, Callable[..., pd.DataFrame]] = {
         "oa": _df_order_amount,
         "oa_ofp": _df_ordamt_ordfeeprcnt,
         "oa_of": _df_ordamt_ordfee,

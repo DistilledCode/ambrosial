@@ -15,7 +15,7 @@ class Address(BaseModel):
     city: str
     lat: float
     lng: float
-    add_id: int
+    address_id: int
     address_line1: str
     address_line2: str
     alternate_mobile: str
@@ -25,10 +25,10 @@ class Address(BaseModel):
         if not isinstance(other, Address):
             return NotImplemented
         return (
-            self.add_id == other.add_id and self.version == other.version
+            self.address_id == other.address_id and self.version == other.version
             if self.ddav
-            else self.add_id == other.add_id
+            else self.address_id == other.address_id
         )
 
     def __hash__(self) -> int:
-        return hash(str(self.add_id) + str(self.version))
+        return hash(str(self.address_id) + str(self.version))

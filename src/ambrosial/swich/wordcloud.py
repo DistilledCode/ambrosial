@@ -20,7 +20,7 @@ class WordCloud:
         path: Optional[Path] = None,
         fname: str = "item_category.png",
         freq_weight: bool = False,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         data = self.swan.items.group_by("category_details")
         self._make_wc(
@@ -36,7 +36,7 @@ class WordCloud:
         path: Optional[Path] = None,
         fname: str = "item_name.png",
         freq_weight: bool = True,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         data = self.swan.items.group_by("name")
         self._make_wc(
@@ -52,7 +52,7 @@ class WordCloud:
         path: Optional[Path] = None,
         fname: str = "restaurant_cuisine.png",
         freq_weight: bool = False,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         data = self.swan.restaurants.cuisines()
         self._make_wc(
@@ -68,7 +68,7 @@ class WordCloud:
         path: Optional[Path] = None,
         fname: str = "restaurant_name.png",
         freq_weight: bool = True,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         data = self.swan.restaurants.group_by("name")
         self._make_wc(
@@ -84,7 +84,7 @@ class WordCloud:
         path: Optional[Path] = None,
         fname: str = "coupon_code.png",
         freq_weight: bool = True,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         data = self.swan.offers.group_by("coupon_applied")
         self._make_wc(

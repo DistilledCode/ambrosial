@@ -10,3 +10,5 @@ venv-swiggy
 zomato
 src/*.egg-info
 future
+docs
+tests

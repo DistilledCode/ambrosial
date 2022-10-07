@@ -1,3 +1,5 @@
+from typing import Optional
+
 from ambrosial.swan import SwiggyAnalytics
 from ambrosial.swich.calendarplot import CalendarPlot
 from ambrosial.swich.heatmap import HeatMap
@@ -6,7 +8,7 @@ from ambrosial.swich.wordcloud import WordCloud
 
 
 class SwiggyChart:
-    def __init__(self, swan: SwiggyAnalytics = None) -> None:
+    def __init__(self, swan: Optional[SwiggyAnalytics] = None) -> None:
         self.swan = swan
         if self.swan is None:
             self.swan = SwiggyAnalytics()

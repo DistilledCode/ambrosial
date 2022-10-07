@@ -18,7 +18,7 @@ class CalendarPlot:
         self,
         date_range: Optional[tuple[str, str]] = None,
         show_plot: bool = False,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         self._calendar_plot(
             code="oa",
@@ -31,7 +31,7 @@ class CalendarPlot:
         self,
         date_range: Optional[tuple[str, str]] = None,
         show_plot: bool = False,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         self._calendar_plot(
             code="on",
@@ -45,7 +45,7 @@ class CalendarPlot:
         month: int,
         date_range: Optional[tuple[str, str]] = None,
         show_plot: bool = False,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         self._month_plot(
             code="oa",
@@ -60,7 +60,7 @@ class CalendarPlot:
         month: int,
         date_range: Optional[tuple[str, str]] = None,
         show_plot: bool = False,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         self._month_plot(
             code="on",
