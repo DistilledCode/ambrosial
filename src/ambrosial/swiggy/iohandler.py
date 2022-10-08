@@ -3,8 +3,10 @@ from pathlib import Path
 
 from msgpack import pack, unpack
 
+from ambrosial.swiggy.datamodel import SwiggyOrderDict
 
-def savej(fp: Path, orders: list[dict]) -> None:
+
+def savej(fp: Path, orders: list[SwiggyOrderDict]) -> None:
     curr_ids = {order["order_id"] for order in orders}
     try:
         with open(fp, "r", encoding="utf-8") as f:
@@ -20,12 +22,12 @@ def savej(fp: Path, orders: list[dict]) -> None:
             dump(loaded, f, indent=4)
 
 
-def loadj(fp: Path) -> list[dict]:
+def loadj(fp: Path) -> list[SwiggyOrderDict]:
     with open(fp, "r", encoding="utf-8") as f:
         return load(f)
 
 
-def saveb(fp: Path, orders: list[dict]) -> None:
+def saveb(fp: Path, orders: list[SwiggyOrderDict]) -> None:
     curr_ids = {order["order_id"] for order in orders}
     try:
         with open(fp, "rb") as f:
@@ -41,6 +43,6 @@ def saveb(fp: Path, orders: list[dict]) -> None:
             pack(orders, f)
 
 
-def loadb(fp: Path) -> list[dict]:
+def loadb(fp: Path) -> list[SwiggyOrderDict]:
     with open(fp, "rb") as f:
         return unpack(f)

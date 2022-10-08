@@ -1,7 +1,9 @@
-from typing import Literal, Optional, Union
+from typing import Any, Literal, NewType, Optional, Union
+
+SwiggyOrderDict = NewType("SwiggyOrderDict", dict[str, Any])
 
 
-class OrderTypes:
+class OrderTypeHint:
     TIP_DETAILS = dict[Literal["amount", "optIn", "type"], Union[float, str]]
     ORDER_STATUS = Literal["Delivered", "cancelled"]
     POST_STATUS = Literal["completed", "cancelled"]
@@ -60,19 +62,19 @@ class OrderTypes:
     ]
 
 
-class ItemTypes:
+class ItemTypeHint:
     VARIANTS = tuple[dict[str, Union[int, float, str, dict[str, str]]], ...]
     ADDONS = tuple[dict[str, Union[str, dict[str, str]]], ...]
     CATEGORY_DETAILS = dict[Literal["category", "sub_category"], str]
     ITEM_CHARGES = dict[Literal["GST", "Service Charges", "Service Tax", "Vat"], float]
 
 
-class RestaurantTypes:
+class RestaurantTypeHint:
     COORDINATES = dict[Literal["lat", "lng"], float]
     GST_CATEGORY = Literal["RESTAURANT", "NONRESTAURANT", "HYBRID", ""]
 
 
-class OfferTypes:
+class OfferTypeHint:
     DISCOUNT_SHARE = dict[
         Literal[
             "alliance_discount",

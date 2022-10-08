@@ -1,6 +1,6 @@
 from pydantic import BaseModel, HttpUrl, NonNegativeFloat, NonNegativeInt
 
-from ambrosial.swiggy.datamodel import ItemTypes
+from ambrosial.swiggy.datamodel import ItemTypeHint
 
 
 class Item(BaseModel):
@@ -12,8 +12,8 @@ class Item(BaseModel):
     external_item_id: str
     name: str
     is_veg: bool
-    variants: ItemTypes.VARIANTS
-    addons: ItemTypes.ADDONS
+    variants: ItemTypeHint.VARIANTS
+    addons: ItemTypeHint.ADDONS
     image: HttpUrl
     quantity: NonNegativeInt
     free_item_quantity: NonNegativeInt
@@ -23,8 +23,8 @@ class Item(BaseModel):
     base_price: NonNegativeFloat
     effective_item_price: NonNegativeFloat
     packing_charges: NonNegativeFloat
-    category_details: ItemTypes.CATEGORY_DETAILS
-    item_charges: ItemTypes.ITEM_CHARGES
+    category_details: ItemTypeHint.CATEGORY_DETAILS
+    item_charges: ItemTypeHint.ITEM_CHARGES
     item_total_discount: NonNegativeFloat
 
     def __eq__(self, other: object) -> bool:

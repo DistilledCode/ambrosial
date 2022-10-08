@@ -1,7 +1,9 @@
 from collections import Counter, defaultdict
 from itertools import chain
 from statistics import mean
-from typing import Any, Optional
+from typing import Any, Optional, Union
+
+from pydantic import HttpUrl
 
 from ambrosial.swiggy import Swiggy
 from ambrosial.swiggy.datamodel.item import Item
@@ -44,7 +46,7 @@ class ItemAnalytics:
             return hist.get(item_id)  # type:ignore
         return dict(hist)
 
-    def summarise(self, item_id: int) -> dict:
+    def summarise(self, item_id: int) -> dict[str, Union[int, float, HttpUrl]]:
         self._is_valid_id(item_id)
         instances = [item for item in self.all_items if item.item_id == item_id]
         return {

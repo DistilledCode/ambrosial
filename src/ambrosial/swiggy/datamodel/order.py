@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt
 
-from ambrosial.swiggy.datamodel import OfferTypes, OrderTypes
+from ambrosial.swiggy.datamodel import OfferTypeHint, OrderTypeHint
 from ambrosial.swiggy.datamodel.address import Address
 from ambrosial.swiggy.datamodel.item import Item
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
@@ -16,7 +16,7 @@ class Offer(BaseModel):
     total_offer_discount: NonNegativeFloat
     discount_type: str
     description: str
-    discount_share: OfferTypes.DISCOUNT_SHARE
+    discount_share: OfferTypeHint.DISCOUNT_SHARE
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Offer):
@@ -34,7 +34,7 @@ class Payment(BaseModel):
     paymentMethodDisplayName: str
     transactionId: str
     amount: NonNegativeFloat
-    paymentMeta: dict[str, Union[str, dict]]
+    paymentMeta: dict[str, Union[str, dict[str, Any]]]
     transactionStatus: str
     swiggyTransactionId: str
     pgTransactionId: str
@@ -52,24 +52,24 @@ class Payment(BaseModel):
 
 
 class Order(BaseModel):
-    tipDetails: OrderTypes.TIP_DETAILS
+    tipDetails: OrderTypeHint.TIP_DETAILS
     order_id: int
     address: Address
     items: list[Item]
-    charges: OrderTypes.CHARGES
+    charges: OrderTypeHint.CHARGES
     is_coupon_applied: bool
     offers_data: list[Offer]
     order_time: datetime
     customer_id: str
-    order_status: OrderTypes.ORDER_STATUS
-    post_status: OrderTypes.POST_STATUS
+    order_status: OrderTypeHint.ORDER_STATUS
+    post_status: OrderTypeHint.POST_STATUS
     order_type: str
     sla_time: NonNegativeInt
-    delivery_boy: OrderTypes.DELIVERY_BOY
+    delivery_boy: OrderTypeHint.DELIVERY_BOY
     restaurant: Restaurant
     payment_method: str
     payment_transaction: list[Payment]
-    order_delivery_status: OrderTypes.ORDER_DELIVERY_STATUS
+    order_delivery_status: OrderTypeHint.ORDER_DELIVERY_STATUS
     ordered_time_in_seconds: NonNegativeInt
     delivered_time_in_seconds: NonNegativeInt
     delivery_time_in_seconds: NonNegativeInt
@@ -87,7 +87,7 @@ class Order(BaseModel):
     free_delivery_discount_hit: NonNegativeInt
     freebie_discount_hit: NonNegativeInt
     super_specific_discount: NonNegativeFloat
-    rating_meta: OrderTypes.RATING_META
+    rating_meta: OrderTypeHint.RATING_META
     customer_user_agent: str
     # ! coordinates from where the order was placed?
     billing_lat: float
@@ -95,23 +95,23 @@ class Order(BaseModel):
     payment_txn_id: str
     order_payment_method: str
     is_refund_initiated: bool
-    cust_lat_lng: OrderTypes.CUST_LAT_LNG
+    cust_lat_lng: OrderTypeHint.CUST_LAT_LNG
     is_long_distance: bool
     on_time: bool
     sla_difference: int
     actual_sla_time: NonNegativeInt
-    payment_txn_status: OrderTypes.PAYMENT_TXN_STATUS
+    payment_txn_status: OrderTypeHint.PAYMENT_TXN_STATUS
     rain_mode: int
     is_super_long_distance: bool
     device_id: str
     swuid: str
     sid: str
     previous_cancellation_fee: NonNegativeInt
-    coupon_type: OrderTypes.COUPON_TYPE
+    coupon_type: OrderTypeHint.COUPON_TYPE
     coupon_description: str
     mCancellationTime: NonNegativeInt
-    configurations: OrderTypes.CONFIGURATIONS
-    free_del_break_up: OrderTypes.FREE_DEL_BREAK_UP
+    configurations: OrderTypeHint.CONFIGURATIONS
+    free_del_break_up: OrderTypeHint.FREE_DEL_BREAK_UP
     order_tags: list[str]
     updated_at: str
     conservative_last_mile_distance: NonNegativeFloat

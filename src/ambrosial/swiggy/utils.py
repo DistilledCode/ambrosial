@@ -1,3 +1,4 @@
+from ast import literal_eval
 from http.cookiejar import Cookie, CookieJar
 from http.cookies import CookieError
 from pathlib import Path
@@ -6,6 +7,8 @@ from typing import TypedDict
 
 import browser_cookie3
 from requests import HTTPError, Response
+
+from ambrosial.swiggy.datamodel import SwiggyOrderDict
 
 
 # total=False to satisfy MyPy
@@ -59,3 +62,28 @@ def get_cookies(domain_name: str) -> CookieJar:
     if not len(cookie_jar) > 0:
         raise CookieError(f"{repr(domain_name)}: No cookies found.")
     return cookie_jar
+
+
+def fix_payment(order: SwiggyOrderDict) -> SwiggyOrderDict:
+    for ind, transaction in enumerate(order["payment_transactions"]):
+        pg_response = transaction["paymentMeta"]["extPGResponse"]
+        if pg_response.__class__ is str and pg_response != "":
+            pg_response = pg_response.replace("false", "False")
+            pg_response = pg_response.replace("true", "True")
+            transaction["paymentMeta"]["extPGResponse"] = literal_eval(pg_response)
+            order["payment_transactions"][ind] = transaction
+    return order
+
+
+def process_orders(order: SwiggyOrderDict) -> SwiggyOrderDict:
+    order = fix_payment(order)
+    if order["offers_data"].__class__ is str and order["offers_data"] != "":
+        order["offers_data"] = literal_eval(order["offers_data"])
+    if order.get("rating_meta", None) is None:
+        order["rating_meta"] = {
+            "restaurant_rating": {"rating": 0},
+            "delivery_rating": {"rating": 0},
+        }
+    else:
+        order["rating_meta"].pop("asset_id", None)
+    return order

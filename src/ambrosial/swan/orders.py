@@ -1,9 +1,10 @@
 import statistics as st
 from collections import Counter
 from itertools import groupby, takewhile
-from typing import Any
+from typing import Any, NoReturn, Union
 
 from ambrosial.swiggy import Swiggy
+from ambrosial.swiggy.datamodel import OrderTypeHint
 from ambrosial.swiggy.datamodel.order import Offer, Order
 
 
@@ -12,7 +13,7 @@ class OrderAnalytics:
         self.swiggy = swiggy
         self.all_orders: list[Order] = self.swiggy.get_orders()
 
-    def group(self) -> None:
+    def group(self) -> NoReturn:
         raise NotImplementedError("Each order is unique. Same as Swiggy.get_orders()")
 
     def group_by(self, attr: str) -> dict[Any, int]:
@@ -23,7 +24,7 @@ class OrderAnalytics:
             raise TypeError(f"attribute {repr(attr)} of 'Order' is unhashable")
         return dict(Counter(getattr(i, attr) for i in self.all_orders).most_common())
 
-    def tseries_amount(self, bins: str = "year+month_") -> dict:
+    def tseries_amount(self, bins: str = "year+month_") -> dict[str, int]:
         crb = self._chronoligally_binned(bins)
         return {
             " ".join(str(i).rjust(2, "0") for i in key): sum(
@@ -32,14 +33,16 @@ class OrderAnalytics:
             for key, val in groupby(crb, lambda x: self._cmp(x, bins))
         }
 
-    def tseries_orders(self, bins: str = "year+month_") -> dict:
+    def tseries_orders(self, bins: str = "year+month_") -> dict[str, int]:
         crb = self._chronoligally_binned(bins)
         return {
             " ".join(str(i).rjust(2, "0") for i in key): len(list(val))
             for key, val in groupby(crb, lambda x: self._cmp(x, bins))
         }
 
-    def tseries_charges(self, bins: str = "year+month_") -> dict:
+    def tseries_charges(
+        self, bins: str = "year+month_"
+    ) -> dict[str, OrderTypeHint.CHARGES]:
         """
         Delivery charges are zero only when the order had free delivery (Swiggy Super)
         In that case check free_delivery_discount_hit attribute
@@ -47,7 +50,10 @@ class OrderAnalytics:
         crb = self._chronoligally_binned(bins)
         return {
             " ".join(str(i).rjust(2, "0") for i in key): dict(
-                sum([Counter(order.charges) for order in orders], Counter())
+                sum(
+                    [Counter(order.charges) for order in orders],
+                    Counter(),
+                )
             )
             for key, orders in groupby(crb, lambda x: self._cmp(x, bins))
         }
@@ -77,7 +83,7 @@ class OrderAnalytics:
                 "mean_promised": round(st.mean(sla_time), 4),
                 "mean_actual": round(st.mean(deltime), 4),
                 "median": round(st.median(deltime), 4),
-                "std_dev": round(st.stdev(deltime), 4) if len(deltime) > 1 else None,
+                "std_dev": round(st.stdev(deltime), 4) if len(deltime) > 1 else -1,
                 "maximum": {
                     "promised": max_time.sla_time,
                     "actual": round(max_time.delivery_time_in_seconds / conv, 4),
@@ -93,7 +99,9 @@ class OrderAnalytics:
             }
         return deltime_dict
 
-    def tseries_punctuality(self, bins: str = "year+month_") -> dict:
+    def tseries_punctuality(
+        self, bins: str = "year+month_"
+    ) -> dict[str, dict[str, int]]:
         crb = self._chronoligally_binned(bins)
         punctuality_dict = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
@@ -120,7 +128,9 @@ class OrderAnalytics:
             }
         return punctuality_dict
 
-    def tseries_distance(self, bins: str = "year+month_") -> dict:
+    def tseries_distance(
+        self, bins: str = "year+month_"
+    ) -> dict[str, dict[str, Union[int, float]]]:
         crb = self._chronoligally_binned(bins)
         distance_dict = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
@@ -190,6 +200,7 @@ class OrderAnalytics:
             "day": order.order_time.day,
             "week": order.order_time.isoweekday(),
             "week_": order.order_time.strftime("%A"),
+            "calweek": order.order_time.isocalendar().week,
             "month": order.order_time.month,
             "month_": order.order_time.strftime("%B"),
             "year": order.order_time.year,
@@ -209,17 +220,17 @@ class OfferAnalytics:
         self.swiggy = swiggy
         self.all_offers = self.swiggy.get_offers()
 
-    def group(self) -> None:
+    def group(self) -> NoReturn:
         raise NotImplementedError("Each offer is unique. Same as Swiggy.get_offers()")
 
-    def group_by(self, attr: str) -> dict[Any, int]:
+    def group_by(self, attr: str) -> dict[str, int]:
         if attr not in list(Offer.__annotations__):
             raise TypeError(f"type object 'Offer' has no attribute {repr(attr)}")
         if attr == "discount_share":
             raise NotImplementedError("use .statistics() instead")
         return dict(Counter(getattr(i, attr) for i in self.all_offers).most_common())
 
-    def statistics(self) -> dict:
+    def statistics(self) -> dict[str, Union[int, float, dict, list[float]]]:
         discounts = [offer.total_offer_discount for offer in self.all_offers]
         sorted_offers = sorted(self.all_offers, key=lambda x: x.total_offer_discount)
         min_ = sorted_offers[0]
@@ -238,7 +249,7 @@ class OfferAnalytics:
             },
             "std_dev_discount": round(st.stdev(discounts), 4)
             if len(discounts) > 1
-            else None,
+            else -1,
             "minimum_discount": {
                 "amount": round(min_.total_offer_discount, 3),
                 "coupon": f"{min_.coupon_applied}: {min_.description}",

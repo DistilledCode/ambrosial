@@ -1,4 +1,3 @@
-from ast import literal_eval
 from copy import deepcopy
 from itertools import chain
 from pathlib import Path
@@ -10,6 +9,7 @@ from requests import Response, get
 import ambrosial.swiggy.convert as convert
 import ambrosial.swiggy.iohandler as ioh
 import ambrosial.swiggy.utils as utils
+from ambrosial.swiggy.datamodel import SwiggyOrderDict
 from ambrosial.swiggy.datamodel.address import Address
 from ambrosial.swiggy.datamodel.item import Item
 from ambrosial.swiggy.datamodel.order import Offer, Order, Payment
@@ -22,11 +22,10 @@ class Swiggy:
         self.ddav = ddav
         self._o_url = "https://www.swiggy.com/dapi/order/all"
         self._p_url = "https://www.swiggy.com/mapi/profile/info"
-        self._domain = "www.swiggy.com"
-        self.orders_raw: list[dict[str, Any]] = []
-        self.orders_refined: list[dict[str, Any]] = []
+        self.orders_raw: list[SwiggyOrderDict] = []
+        self.orders_refined: list[SwiggyOrderDict] = []
         self._response: Response = Response()
-        self._response_json: dict = {}
+        self._response_json: dict[str, Any] = {}
         self._customer_info: utils.UserInfo = {}
         self._fetched = False
         self.home_path = Path.home() / ".ambrosial" if path is None else path
@@ -165,33 +164,10 @@ class Swiggy:
         self._response = get(self._o_url, cookies=self._cookie_jar, params=param)
         self._response_json = self._response.json()
 
-    def _get_processed_order(self) -> list[dict]:
-        return [self._process_orders(deepcopy(order)) for order in self.orders_raw]
+    def _get_processed_order(self) -> list[SwiggyOrderDict]:
+        return [utils.process_orders(deepcopy(order)) for order in self.orders_raw]
 
-    def _fix_payment(self, order: dict) -> dict:
-        for ind, transaction in enumerate(order["payment_transactions"]):
-            pg_response = transaction["paymentMeta"]["extPGResponse"]
-            if pg_response.__class__ is str and pg_response != "":
-                pg_response = pg_response.replace("false", "False")
-                pg_response = pg_response.replace("true", "True")
-                transaction["paymentMeta"]["extPGResponse"] = literal_eval(pg_response)
-                order["payment_transactions"][ind] = transaction
-        return order
-
-    def _process_orders(self, order: dict) -> dict:
-        order = self._fix_payment(order)
-        if order["offers_data"].__class__ is str and order["offers_data"] != "":
-            order["offers_data"] = literal_eval(order["offers_data"])
-        if order.get("rating_meta", None) is None:
-            order["rating_meta"] = {
-                "restaurant_rating": {"rating": 0},
-                "delivery_rating": {"rating": 0},
-            }
-        else:
-            order["rating_meta"].pop("asset_id", None)
-        return order
-
-    def _parse_orders(self) -> list[dict]:
+    def _parse_orders(self) -> list[SwiggyOrderDict]:
         utils.validate_response(self._response)
         return self._response.json()["data"]["orders"]
 

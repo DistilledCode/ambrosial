@@ -1,5 +1,6 @@
 import statistics as st
 from collections import Counter, defaultdict
+from typing import Any, Union
 
 from ambrosial.swiggy import Swiggy
 from ambrosial.swiggy.datamodel.address import Address
@@ -18,7 +19,7 @@ class AddressAnalytics:
     def group_by(self, attr: str) -> dict[str, int]:
         return dict(Counter(getattr(i, attr) for i in self.all_addresses).most_common())
 
-    def coordinates(self) -> list[dict]:
+    def coordinates(self) -> list[dict[str, Union[str, float]]]:
         return [
             {
                 "id_version": f"{address.address_id}_{address.version}",
@@ -29,7 +30,7 @@ class AddressAnalytics:
             for address in set(self.all_addresses)
         ]
 
-    def order_history(self) -> dict:
+    def order_history(self) -> defaultdict[str, list[dict[str, Any]]]:
         hist = defaultdict(list)
         for order in self.all_orders:
             hist[self._get_key(order)].append(
@@ -38,9 +39,11 @@ class AddressAnalytics:
                     "order_time": order.order_time,
                 }
             )
-        return dict(hist)
+        return hist
 
-    def delivery_time_stats(self, unit: str = "minute") -> dict:
+    def delivery_time_stats(
+        self, unit: str = "minute"
+    ) -> dict[str, dict[str, Union[int, float]]]:
         delivery_time = defaultdict(list)
         for order in self.all_orders:
             if (dt := order.delivery_time_in_seconds) != 0:
@@ -49,7 +52,7 @@ class AddressAnalytics:
             address: {
                 "mean": round(st.mean(total_dt), 4),
                 "median": round(st.median(total_dt), 4),
-                "std_dev": round(st.stdev(total_dt), 4) if len(total_dt) > 1 else None,
+                "std_dev": round(st.stdev(total_dt), 4) if len(total_dt) > 1 else -1,
                 "maximum": round(max(total_dt), 4),
                 "minimum": round(min(total_dt), 4),
                 "total_deliveries": len(total_dt),

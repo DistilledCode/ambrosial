@@ -1,3 +1,4 @@
+from ambrosial.swiggy.datamodel import SwiggyOrderDict
 from ambrosial.swiggy.datamodel.address import Address
 from ambrosial.swiggy.datamodel.item import Item
 from ambrosial.swiggy.datamodel.order import Offer, Order, Payment
@@ -34,7 +35,7 @@ ATTRS["offers_data"].remove("coupon_applied")
 ATTRS["payment"].remove("order_id")
 
 
-def order(_order: dict, ddav: bool) -> Order:
+def order(_order: SwiggyOrderDict, ddav: bool) -> Order:
     return Order(
         **{attr: _order.get(attr, None) for attr in ATTRS["order"]},
         restaurant=restaurant(_order, ddav),
@@ -46,7 +47,7 @@ def order(_order: dict, ddav: bool) -> Order:
     )
 
 
-def item(order: dict) -> list[Item]:
+def item(order: SwiggyOrderDict) -> list[Item]:
     for item in order["order_items"]:
         if not item["free_item_quantity"]:
             item["free_item_quantity"] = 0
@@ -85,7 +86,7 @@ def restaurant(order: dict, ddav: bool) -> Restaurant:
     )
 
 
-def address(order: dict, ddav: bool) -> Address:
+def address(order: SwiggyOrderDict, ddav: bool) -> Address:
     return Address(
         ddav=ddav,
         **{
@@ -95,7 +96,7 @@ def address(order: dict, ddav: bool) -> Address:
     )
 
 
-def payment(order: dict) -> list[Payment]:
+def payment(order: SwiggyOrderDict) -> list[Payment]:
     if not order["payment_transactions"]:
         return []
     return [
@@ -107,7 +108,7 @@ def payment(order: dict) -> list[Payment]:
     ]
 
 
-def offer(order: dict) -> list[Offer]:
+def offer(order: SwiggyOrderDict) -> list[Offer]:
     if order["offers_data"] == "":
         return []
     return [

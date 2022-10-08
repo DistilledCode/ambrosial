@@ -28,7 +28,7 @@ class RestaurantAnalytics:
             ).most_common()
         )
 
-    def cuisines(self) -> dict:
+    def cuisines(self) -> dict[str, int]:
         return dict(
             Counter(
                 list(
