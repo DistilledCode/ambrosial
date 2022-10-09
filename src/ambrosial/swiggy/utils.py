@@ -3,15 +3,14 @@ from http.cookiejar import Cookie, CookieJar
 from http.cookies import CookieError
 from pathlib import Path
 from time import time
-from typing import TypedDict
+from typing import Any, NewType, TypedDict
 
 import browser_cookie3
 from requests import HTTPError, Response
 
-from ambrosial.swiggy.datamodel import SwiggyOrderDict
+SwiggyOrderDict = NewType("SwiggyOrderDict", dict[str, Any])
 
 
-# total=False to satisfy MyPy
 class UserInfo(TypedDict, total=False):
 
     customer_id: int

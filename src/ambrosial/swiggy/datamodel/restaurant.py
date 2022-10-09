@@ -1,6 +1,6 @@
 from pydantic import BaseModel, HttpUrl
 
-from ambrosial.swiggy.datamodel import RestaurantTypeHint
+from ambrosial.swiggy.datamodel.typealiases import RestaurantTypeHint
 
 
 class Restaurant(BaseModel):

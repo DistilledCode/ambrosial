@@ -3,10 +3,10 @@ from typing import Any, Optional, Union
 
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt
 
-from ambrosial.swiggy.datamodel import OfferTypeHint, OrderTypeHint
 from ambrosial.swiggy.datamodel.address import Address
 from ambrosial.swiggy.datamodel.item import Item
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
+from ambrosial.swiggy.datamodel.typealiases import OfferTypeHint, OrderTypeHint
 
 
 class Offer(BaseModel):

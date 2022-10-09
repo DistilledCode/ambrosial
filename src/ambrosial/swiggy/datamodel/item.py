@@ -1,6 +1,6 @@
 from pydantic import BaseModel, HttpUrl, NonNegativeFloat, NonNegativeInt
 
-from ambrosial.swiggy.datamodel import ItemTypeHint
+from ambrosial.swiggy.datamodel.typealiases import ItemTypeHint
 
 
 class Item(BaseModel):

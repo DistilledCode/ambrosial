@@ -1,8 +1,8 @@
-from ambrosial.swiggy.datamodel import SwiggyOrderDict
 from ambrosial.swiggy.datamodel.address import Address
 from ambrosial.swiggy.datamodel.item import Item
 from ambrosial.swiggy.datamodel.order import Offer, Order, Payment
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
+from ambrosial.swiggy.utils import SwiggyOrderDict
 
 URL = "https://res.cloudinary.com/swiggy/image/upload/"
 ATTRS = {

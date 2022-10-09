@@ -1,11 +1,12 @@
 import statistics as st
 from collections import Counter
 from itertools import groupby, takewhile
-from typing import Any, NoReturn, Union
+from typing import Hashable, NoReturn, Union
 
+import ambrosial.swan.typealiases as alias
 from ambrosial.swiggy import Swiggy
-from ambrosial.swiggy.datamodel import OrderTypeHint
 from ambrosial.swiggy.datamodel.order import Offer, Order
+from ambrosial.swiggy.datamodel.typealiases import OrderTypeHint
 
 
 class OrderAnalytics:
@@ -16,7 +17,7 @@ class OrderAnalytics:
     def group(self) -> NoReturn:
         raise NotImplementedError("Each order is unique. Same as Swiggy.get_orders()")
 
-    def group_by(self, attr: str) -> dict[Any, int]:
+    def group_by(self, attr: str) -> dict[Hashable, int]:
         attrs = [i for i, j in Order.__annotations__.items() if j.__hash__ is not None]
         if attr not in list(Order.__annotations__):
             raise TypeError(f"type object 'Order' has no attribute {repr(attr)}")
@@ -58,7 +59,11 @@ class OrderAnalytics:
             for key, orders in groupby(crb, lambda x: self._cmp(x, bins))
         }
 
-    def tseries_del_time(self, bins: str = "year+month_", unit: str = "minute") -> dict:
+    def tseries_del_time(
+        self,
+        bins: str = "year+month_",
+        unit: str = "minute",
+    ) -> dict[str, alias.DelTime]:
         conv = {"minute": 60, "hour": 3600}.get(unit, 1)
         crb = self._chronoligally_binned(bins)
         deltime_dict = {}
@@ -78,117 +83,139 @@ class OrderAnalytics:
             min_time = min(
                 orders_, key=lambda x: (x.mCancellationTime, x.delivery_time_in_seconds)
             )
-            deltime_dict[" ".join(str(i).rjust(2, "0") for i in key)] = {
-                "deliveries": len(deltime),
-                "mean_promised": round(st.mean(sla_time), 4),
-                "mean_actual": round(st.mean(deltime), 4),
-                "median": round(st.median(deltime), 4),
-                "std_dev": round(st.stdev(deltime), 4) if len(deltime) > 1 else -1,
-                "maximum": {
-                    "promised": max_time.sla_time,
-                    "actual": round(max_time.delivery_time_in_seconds / conv, 4),
-                    "order_id": max_time.order_id,
-                    "distance": max_time.restaurant.customer_distance[1],
-                },
-                "minimum": {
-                    "promised": min_time.sla_time,
-                    "actual": round(min_time.delivery_time_in_seconds / conv, 4),
-                    "order_id": min_time.order_id,
-                    "distance": min_time.restaurant.customer_distance[1],
-                },
-            }
+            deltime_dict[" ".join(str(i).rjust(2, "0") for i in key)] = alias.DelTime(
+                deliveries=len(deltime),
+                mean_promised=round(st.mean(sla_time), 4),
+                mean_actual=round(st.mean(deltime), 4),
+                median=round(st.median(deltime), 4),
+                std_dev=round(st.stdev(deltime), 4) if len(deltime) > 1 else -1,
+                maximum=alias.DelTimeExtreme(
+                    promised=max_time.sla_time,
+                    actual=round(max_time.delivery_time_in_seconds / conv, 4),
+                    order_id=max_time.order_id,
+                    distance=max_time.restaurant.customer_distance[1],
+                ),
+                minimum=alias.DelTimeExtreme(
+                    promised=min_time.sla_time,
+                    actual=round(min_time.delivery_time_in_seconds / conv, 4),
+                    order_id=min_time.order_id,
+                    distance=min_time.restaurant.customer_distance[1],
+                ),
+            )
         return deltime_dict
 
     def tseries_punctuality(
         self, bins: str = "year+month_"
-    ) -> dict[str, dict[str, int]]:
+    ) -> dict[str, alias.Punctuality]:
         crb = self._chronoligally_binned(bins)
-        punctuality_dict = {}
-        for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
-            # values of groupby() are exhausted once iterated over. thus making a copy
-            orders_ = list(orders)
-            punctuality_dict[" ".join(str(i).rjust(2, "0") for i in key)] = {
-                "on_time": sum(
-                    1
-                    for order in orders_
-                    if not order.mCancellationTime and order.on_time is True
-                ),
-                "late": sum(
-                    1
-                    for order in orders_
-                    if not order.mCancellationTime and order.on_time is False
-                ),
-                "max_delivery_time": max(
-                    orders_, key=lambda x: x.actual_sla_time
-                ).actual_sla_time,
-                "min_delivery_time": min(
-                    orders_,
-                    key=lambda x: (x.mCancellationTime, x.actual_sla_time),
-                ).actual_sla_time,
-            }
-        return punctuality_dict
+        return {
+            " ".join(
+                str(i).rjust(2, "0") for i in key
+            ): self._get_order_punctuality_details(list(orders))
+            for key, orders in groupby(crb, lambda x: self._cmp(x, bins))
+        }
 
-    def tseries_distance(
-        self, bins: str = "year+month_"
-    ) -> dict[str, dict[str, Union[int, float]]]:
+    def tseries_distance(self, bins: str = "year+month_") -> dict[str, alias.Distance]:
         crb = self._chronoligally_binned(bins)
         distance_dict = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
             orders_ = list(orders)
-            dist_travelled = sum(
-                order.restaurant.customer_distance[1]
-                for order in orders_
-                if not order.mCancellationTime
+            dist_travelled: float = 0.0
+            orders_placed = 0
+            for order in orders_:
+                if order.mCancellationTime:
+                    continue
+                dist_travelled += order.restaurant.customer_distance[1]
+                orders_placed += 1
+            distance_dict[" ".join(str(i).rjust(2, "0") for i in key)] = alias.Distance(
+                distance_covered=round(dist_travelled, 4),
+                orders_placed=orders_placed,
+                distance_covered_per_order=round(dist_travelled / orders_placed, 4),
             )
-            orders_placed = sum(1 for order in orders_ if not order.mCancellationTime)
-            distance_dict[" ".join(str(i).rjust(2, "0") for i in key)] = {
-                "distance_covered": round(dist_travelled, 4),
-                "orders_placed": orders_placed,
-                "distance_cov_per_order": round(dist_travelled / orders_placed, 4),
-            }
         return distance_dict
 
-    def tseries_super_benefits(self, bins: str = "year+month_") -> dict:
+    def tseries_super_benefits(
+        self,
+        bins: str = "year+month_",
+    ) -> dict[str, alias.SuperBenefits]:
         crb = self._chronoligally_binned(bins)
-        super_benefit = {}
-        for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
-            orders_ = list(orders)
-            free_deliveries = sum(order.free_delivery_discount_hit for order in orders_)
-            other_benefits = sum(order.trade_discount for order in orders_)
-            super_benefit[" ".join(str(i).rjust(2, "0") for i in key)] = {
-                "total_benefit": round(free_deliveries + other_benefits, 3),
-                "other_super_discount": round(other_benefits, 3),
-                "free_deliveries": {
-                    "total_amount": round(free_deliveries, 3),
-                    "break_up": dict(
-                        sum(
-                            [Counter(order.free_del_break_up) for order in orders_],
-                            Counter(),
-                        )
-                    ),
-                },
-            }
-        return super_benefit
+        return {
+            " ".join(
+                str(i).rjust(2, "0") for i in key
+            ): self._get_super_benefits_detail(list(orders))
+            for key, orders in groupby(crb, lambda x: self._cmp(x, bins))
+        }
 
-    def tseries_furthest_order(self, bins: str = "week_") -> dict:
+    def _get_super_benefits_detail(
+        self,
+        orders: list[Order],
+    ) -> alias.SuperBenefits:
+        free_deliveries = 0
+        other_benefits: float = 0.0
+        fd_break_up: Counter = Counter()
+        for order in orders:
+            free_deliveries += order.free_delivery_discount_hit
+            other_benefits += order.trade_discount
+            fd_break_up += Counter(order.free_del_break_up)
+
+        return alias.SuperBenefits(
+            total_benefit=round(free_deliveries + other_benefits, 3),
+            other_super_discount=round(other_benefits, 3),
+            free_deliveries=alias.FreeDeliveries(
+                total_amount=free_deliveries,
+                break_up=dict(fd_break_up),
+            ),
+        )
+
+    def tseries_furthest_order(
+        self,
+        bins: str = "week_",
+    ) -> dict[str, alias.FurthestOrder]:
         crb = self._chronoligally_binned(bins)
         furthest_dict = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
             orders_ = list(orders)
             furthest = max(orders_, key=lambda x: x.restaurant.customer_distance[1])
             f_rest = furthest.restaurant
-            furthest_dict[" ".join(str(i).rjust(2, "0") for i in key)] = {
-                "distance_covered": furthest.restaurant.customer_distance[1],
-                "restaurant": f"{f_rest.name}, {f_rest.area_name}, {f_rest.city_name}",
-                "items": [item.name for item in furthest.items],
-                "delivered_by": furthest.delivery_boy["name"],
-                "time_taken": f"{furthest.delivery_time_in_seconds/60:.2f} mins",
-                "was_on_time": furthest.on_time,
-            }
+            furthest_dict[
+                " ".join(str(i).rjust(2, "0") for i in key)
+            ] = alias.FurthestOrder(
+                distance_covered=furthest.restaurant.customer_distance[1],
+                restaurant=f"{f_rest.name}, {f_rest.area_name}, {f_rest.city_name}",
+                items=[item.name for item in furthest.items],
+                delivered_by=str(furthest.delivery_boy["name"]),
+                time_taken=f"{furthest.delivery_time_in_seconds/60:.2f} mins",
+                was_on_time=furthest.on_time,
+            )
         return furthest_dict
 
     def _chronoligally_binned(self, bins: str) -> list[Order]:
         return sorted(self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True))
+
+    def _get_order_punctuality_details(
+        self,
+        orders: list[Order],
+    ) -> alias.Punctuality:
+        on_time = 0
+        late = 0
+        max_time = 0
+        min_time = 24 * 60  # one day
+        for order in orders:
+            if order.mCancellationTime:
+                continue
+            if order.on_time:
+                on_time += 1
+            else:
+                late += 1
+            actual_time = order.actual_sla_time
+            max_time = max(max_time, actual_time)
+            min_time = min(min_time, actual_time)
+        return alias.Punctuality(
+            on_time=on_time,
+            late=late,
+            max_delivery_time=max_time,
+            min_delivery_time=min_time,
+        )
 
     def _cmp(self, order: Order, bins: str, chrono: bool = False) -> tuple:
         # TODO: include an option to groupby according to custom strftime string

@@ -1,10 +1,9 @@
 from collections import Counter, defaultdict
 from itertools import chain
 from statistics import mean
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
-from pydantic import HttpUrl
-
+import ambrosial.swan.typealiases as alias
 from ambrosial.swiggy import Swiggy
 from ambrosial.swiggy.datamodel.item import Item
 
@@ -30,40 +29,37 @@ class ItemAnalytics:
             return dict(obj_dict[attr]())
         return dict(self._get_attr_detail(attr))
 
-    def history(self, item_id: Optional[int] = None) -> dict:
+    def history(
+        self,
+        item_id: Optional[int] = None,
+    ) -> dict[int, list[alias.History]]:
         hist = defaultdict(list)
         for item in self.all_items:
             hist[item.item_id].append(
-                {
-                    "order_id": item.order_id,
-                    "address_id": self.swiggy.get_order(
-                        item.order_id
-                    ).address.address_id,
-                    "order_time": self.swiggy.get_order(item.order_id).order_time,
-                }
+                alias.History(
+                    order_id=item.order_id,
+                    address_id=self.swiggy.get_order(item.order_id).address.address_id,
+                    order_time=self.swiggy.get_order(item.order_id).order_time,
+                )
             )
         if item_id is not None and self._is_valid_id(item_id):
-            return hist.get(item_id)  # type:ignore
+            return {item_id: hist[item_id]}
         return dict(hist)
 
-    def summarise(self, item_id: int) -> dict[str, Union[int, float, HttpUrl]]:
+    def summarise(self, item_id: int) -> alias.Summarise:
         self._is_valid_id(item_id)
         instances = [item for item in self.all_items if item.item_id == item_id]
-        return {
-            "total_quantity": sum(i.quantity for i in instances),
-            "avg_base_price": round(mean(i.base_price for i in instances), 3),
-            "total_mrp": round(sum(i.subtotal for i in instances), 3),
-            "total_discount": round(sum(i.item_total_discount for i in instances), 3),
-            "total_actual_cost": round(
-                sum(i.effective_item_price for i in instances), 3
-            ),
-            "total_tax": round(sum(sum(i.item_charges.values()) for i in instances), 3),
-            "avg_actual_cost": round(
-                mean(i.effective_item_price for i in instances), 3
-            ),
-            "image_url": instances[0].image,
-            "received_for_free": sum(i.free_item_quantity for i in instances),
-        }
+        return alias.Summarise(
+            total_quantity=sum(i.quantity for i in instances),
+            avg_base_price=round(mean(i.base_price for i in instances), 3),
+            total_mrp=round(sum(i.subtotal for i in instances), 3),
+            total_discount=round(sum(i.item_total_discount for i in instances), 3),
+            total_actual_cost=round(sum(i.effective_item_price for i in instances), 3),
+            total_tax=round(sum(sum(i.item_charges.values()) for i in instances), 3),
+            avg_actual_cost=round(mean(i.effective_item_price for i in instances), 3),
+            image_url=instances[0].image,
+            received_for_free=sum(i.free_item_quantity for i in instances),
+        )
 
     def search_item(self, name: str, exact: bool = True) -> list[Item]:
         return (

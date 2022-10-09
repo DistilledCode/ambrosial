@@ -3,7 +3,7 @@ from pathlib import Path
 
 from msgpack import pack, unpack
 
-from ambrosial.swiggy.datamodel import SwiggyOrderDict
+from ambrosial.swiggy.utils import SwiggyOrderDict
 
 
 def savej(fp: Path, orders: list[SwiggyOrderDict]) -> None:

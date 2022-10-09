@@ -1,6 +1,6 @@
 from typing import Literal, Optional, Union
 
-from ambrosial.swiggy.datamodel import SwiggyOrderDict
+from ambrosial.swiggy.utils import SwiggyOrderDict
 
 
 def _order(

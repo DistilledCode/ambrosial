@@ -1,7 +1,7 @@
 import statistics as st
 from collections import Counter, defaultdict
-from typing import Any, Union
 
+import ambrosial.swan.typealiases as alias
 from ambrosial.swiggy import Swiggy
 from ambrosial.swiggy.datamodel.address import Address
 from ambrosial.swiggy.datamodel.order import Order
@@ -19,44 +19,45 @@ class AddressAnalytics:
     def group_by(self, attr: str) -> dict[str, int]:
         return dict(Counter(getattr(i, attr) for i in self.all_addresses).most_common())
 
-    def coordinates(self) -> list[dict[str, Union[str, float]]]:
+    def coordinates(self) -> list[alias.Coordindates]:
         return [
-            {
-                "id_version": f"{address.address_id}_{address.version}",
-                "annotation": address.annotation,
-                "latitude": address.lat,
-                "longitude": address.lng,
-            }
+            alias.Coordindates(
+                id_version=f"{address.address_id}_{address.version}",
+                annotation=address.annotation,
+                latitude=address.lat,
+                longitude=address.lng,
+            )
             for address in set(self.all_addresses)
         ]
 
-    def order_history(self) -> defaultdict[str, list[dict[str, Any]]]:
+    def order_history(self) -> defaultdict[str, list[alias.OrderHistory]]:
         hist = defaultdict(list)
         for order in self.all_orders:
             hist[self._get_key(order)].append(
-                {
-                    "order_id": order.order_id,
-                    "order_time": order.order_time,
-                }
+                alias.OrderHistory(
+                    order_id=order.order_id,
+                    order_time=order.order_time,
+                )
             )
         return hist
 
     def delivery_time_stats(
-        self, unit: str = "minute"
-    ) -> dict[str, dict[str, Union[int, float]]]:
+        self,
+        unit: str = "minute",
+    ) -> dict[str, alias.DeliveryTimeStats]:
         delivery_time = defaultdict(list)
         for order in self.all_orders:
             if (dt := order.delivery_time_in_seconds) != 0:
                 delivery_time[self._get_key(order)].append(dt / self._conv_factor(unit))
         return {
-            address: {
-                "mean": round(st.mean(total_dt), 4),
-                "median": round(st.median(total_dt), 4),
-                "std_dev": round(st.stdev(total_dt), 4) if len(total_dt) > 1 else -1,
-                "maximum": round(max(total_dt), 4),
-                "minimum": round(min(total_dt), 4),
-                "total_deliveries": len(total_dt),
-            }
+            address: alias.DeliveryTimeStats(
+                mean=round(st.mean(total_dt), 4),
+                median=round(st.median(total_dt), 4),
+                std_dev=round(st.stdev(total_dt), 4) if len(total_dt) > 1 else -1,
+                maximum=round(max(total_dt), 4),
+                minimum=round(min(total_dt), 4),
+                total_deliveries=len(total_dt),
+            )
             for address, total_dt in delivery_time.items()
         }
 
