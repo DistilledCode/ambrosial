@@ -31,4 +31,8 @@ class Address(BaseModel):
         )
 
     def __hash__(self) -> int:
-        return hash(str(self.address_id) + str(self.version))
+        return (
+            hash(str(self.address_id) + str(self.version))
+            if self.ddav
+            else hash(str(self.address_id))
+        )
