@@ -1,5 +1,6 @@
 import statistics as st
 from collections import Counter, defaultdict
+from typing import Any, Optional
 
 import ambrosial.swan.typealiases as alias
 from ambrosial.swiggy import Swiggy
@@ -18,6 +19,19 @@ class AddressAnalytics:
 
     def group_by(self, attr: str) -> dict[str, int]:
         return dict(Counter(getattr(i, attr) for i in self.all_addresses).most_common())
+
+    def grouped_instances(
+        self,
+        key: str,
+        attr: Optional[str] = None,
+    ) -> dict[Any, Any]:
+        group_dict = defaultdict(list)
+        for address in self.swiggy.get_addresses():
+            if attr is not None:
+                group_dict[getattr(address, key)].append(getattr(address, attr))
+            else:
+                group_dict[getattr(address, key)].append(address)
+        return dict(group_dict)
 
     def coordinates(self) -> list[alias.Coordindates]:
         return [

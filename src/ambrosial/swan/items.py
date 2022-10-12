@@ -29,6 +29,15 @@ class ItemAnalytics:
             return dict(obj_dict[attr]())
         return dict(self._get_attr_detail(attr))
 
+    def grouped_instances(self, key: str, attr: Optional[str] = None) -> dict[Any, Any]:
+        g_dict = defaultdict(list)
+        for item in self.swiggy.get_items():
+            if attr is None:
+                g_dict[getattr(item, key)].append(item)
+            else:
+                g_dict[getattr(item, key)].append(getattr(item, attr))
+        return dict(g_dict)
+
     def history(
         self,
         item_id: Optional[int] = None,

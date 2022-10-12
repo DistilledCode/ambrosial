@@ -1,5 +1,6 @@
 from collections import Counter, defaultdict
 from itertools import chain
+from typing import Any, Optional
 
 from ambrosial.swiggy import Swiggy
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
@@ -27,6 +28,19 @@ class RestaurantAnalytics:
                 getattr(restaurant, attr) for restaurant in self.all_restaurants
             ).most_common()
         )
+
+    def grouped_instances(
+        self,
+        key: str,
+        attr: Optional[str] = None,
+    ) -> dict[Any, Any]:
+        group_dict = defaultdict(list)
+        for rest in self.swiggy.get_restaurants():
+            if attr is not None:
+                group_dict[getattr(rest, key)].append(getattr(rest, attr))
+            else:
+                group_dict[getattr(rest, key)].append(rest)
+        return dict(group_dict)
 
     def cuisines(self) -> dict[str, int]:
         return dict(
