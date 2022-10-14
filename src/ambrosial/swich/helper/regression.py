@@ -52,7 +52,7 @@ def _df_ordtime_orddist(swan: SwiggyAnalytics, ro: bool, **_: str) -> pd.DataFra
     return pd.DataFrame({"x": distance, "y": time_taken})
 
 
-def _df_delivery_punctuality_bool(
+def _df_ordtime_punctuality_bool(
     swan: SwiggyAnalytics,
     ro: bool,
     **_: str,
@@ -69,7 +69,24 @@ def _df_delivery_punctuality_bool(
     return pd.DataFrame({"x": delivery_time, "y": punctuality})
 
 
-def _df_delivery_punctuality(
+def _df_orddist_punctuality_bool(
+    swan: SwiggyAnalytics,
+    ro: bool,
+    **_: str,
+) -> pd.DataFrame:
+    orders = swan.swiggy.get_orders()
+    delivery_dist: list[float] = []
+    punctuality: list[bool] = []
+    for order in orders:
+        if not order.mCancellationTime:
+            delivery_dist.append(order.restaurant.customer_distance[1])
+            punctuality.append(order.on_time)
+    if ro:
+        remove_outliers(delivery_dist, punctuality)
+    return pd.DataFrame({"x": delivery_dist, "y": punctuality})
+
+
+def _df_ordtime_punctuality(
     swan: SwiggyAnalytics,
     ro: bool,
     **_: str,
@@ -89,7 +106,7 @@ def _df_delivery_punctuality(
 
 
 def get_dataframe(
-    code: Literal["oa", "oa_ofp", "oa_of", "ot_od", "d_p_b", "d_p"],
+    code: Literal["oa", "oa_ofp", "oa_of", "ot_od", "ot_p_b", "ot_p", "od_p_b"],
     swan: SwiggyAnalytics,
     bins: str = "",
     ro: bool = True,
@@ -99,8 +116,9 @@ def get_dataframe(
         "oa_ofp": _df_ordamt_ordfeeprcnt,
         "oa_of": _df_ordamt_ordfee,
         "ot_od": _df_ordtime_orddist,
-        "d_p_b": _df_delivery_punctuality_bool,
-        "d_p": _df_delivery_punctuality,
+        "ot_p_b": _df_ordtime_punctuality_bool,
+        "ot_p": _df_ordtime_punctuality,
+        "od_p_b": _df_orddist_punctuality_bool,
     }
 
     return func_dict[code](swan, bins=bins, ro=ro)

@@ -143,8 +143,8 @@ class RegressionPlot:
         p.set_xlabel("Order Distance  (kms)", fontsize=15)
         p.set_ylabel("Order Delivery Time  (minutes)\n", fontsize=15)
 
-    def delivery_punctuality_bool(self, remove_outliers: bool = True) -> None:
-        df = get_dataframe(code="d_p_b", swan=self.swan, ro=remove_outliers)
+    def ordtime_punctuality_bool(self, remove_outliers: bool = True) -> None:
+        df = get_dataframe(code="ot_p_b", swan=self.swan, ro=remove_outliers)
         p = sns.regplot(
             data=df,
             x="x",
@@ -172,10 +172,41 @@ class RegressionPlot:
         p.set_yticks([0, 1])
         p.set_yticklabels(["No", "Yes"])
         p.set_xlabel("Order Delivery Time  (minutes)", fontsize=15)
-        p.set_ylabel("Was Order On TIme\n", fontsize=15)
+        p.set_ylabel("Was Order On Time\n", fontsize=15)
 
-    def delivery_punctuality(self, remove_outliers: bool = True) -> None:
-        df = get_dataframe(code="d_p", swan=self.swan, ro=remove_outliers)
+    def orddist_punctuality_bool(self, remove_outliers: bool = True) -> None:
+        df = get_dataframe(code="od_p_b", swan=self.swan, ro=remove_outliers)
+        p = sns.regplot(
+            data=df,
+            x="x",
+            y="y",
+            scatter=True,
+            truncate=True,
+            fit_reg=True,
+            order=1,
+            logistic=True,
+            y_jitter=0.15,
+            line_kws=self.line_kws,
+            scatter_kws=self.scatter_kws,
+        )
+        p.set_title("Punctuality v/s Order Distance\n", fontsize=15)
+        p.set_xticks(
+            [
+                round(float(i), 2)
+                for i in np.linspace(
+                    min(df["x"]),
+                    max(df["x"]),
+                    20,
+                )
+            ]
+        )
+        p.set_yticks([0, 1])
+        p.set_yticklabels(["No", "Yes"])
+        p.set_xlabel("Order Distance (km)", fontsize=15)
+        p.set_ylabel("Was Order On Time\n", fontsize=15)
+
+    def ordtime_punctuality(self, remove_outliers: bool = True) -> None:
+        df = get_dataframe(code="ot_p", swan=self.swan, ro=remove_outliers)
         p = sns.regplot(
             data=df,
             x="x",
