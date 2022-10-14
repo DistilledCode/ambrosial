@@ -29,7 +29,7 @@ class Map:
     def noise(self) -> float:
         return self.ndist.samples(1)[0]
 
-    def order_count(
+    def count_density(
         self,
         city: str,
         nationwide: bool = False,
@@ -56,7 +56,7 @@ class Map:
             save=save,
         )
 
-    def order_amount(
+    def amount_density(
         self,
         city: str,
         nationwide: bool = False,
