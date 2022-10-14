@@ -274,6 +274,15 @@ class OfferAnalytics:
             raise NotImplementedError("use .statistics() instead")
         return dict(Counter(getattr(i, attr) for i in self.all_offers).most_common())
 
+    def grouped_instances(self, key: str, attr: Optional[str] = None) -> dict[Any, Any]:
+        group_dict = defaultdict(list)
+        for offer in self.swiggy.get_offers():
+            if attr is not None:
+                group_dict[getattr(offer, key)].append(getattr(offer, attr))
+            else:
+                group_dict[getattr(offer, key)].append(offer)
+        return dict(group_dict)
+
     def statistics(self) -> dict[str, Union[int, float, dict, list[float]]]:
         discounts = [offer.total_offer_discount for offer in self.all_offers]
         sorted_offers = sorted(self.all_offers, key=lambda x: x.total_offer_discount)
