@@ -2,7 +2,8 @@ from typing import Optional
 
 from ambrosial.swan.addresses import AddressAnalytics
 from ambrosial.swan.items import ItemAnalytics
-from ambrosial.swan.orders import OfferAnalytics, OrderAnalytics, PaymentAnalytics
+from ambrosial.swan.offers import OfferAnalytics, PaymentAnalytics
+from ambrosial.swan.orders import OrderAnalytics
 from ambrosial.swan.restaurants import RestaurantAnalytics
 from ambrosial.swiggy import Swiggy
 
