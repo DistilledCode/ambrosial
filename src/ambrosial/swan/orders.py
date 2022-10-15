@@ -45,16 +45,14 @@ class OrderAnalytics:
     def tseries_amount(self, bins: str = "year+month_") -> dict[str, int]:
         crb = self._chronoligally_binned(bins)
         return {
-            " ".join(str(i).rjust(2, "0") for i in key): sum(
-                order.order_total for order in list(val)
-            )
+            " ".join(str(i) for i in key): sum(order.order_total for order in list(val))
             for key, val in groupby(crb, lambda x: self._cmp(x, bins))
         }
 
     def tseries_orders(self, bins: str = "year+month_") -> dict[str, int]:
         crb = self._chronoligally_binned(bins)
         return {
-            " ".join(str(i).rjust(2, "0") for i in key): len(list(val))
+            " ".join(str(i) for i in key): len(list(val))
             for key, val in groupby(crb, lambda x: self._cmp(x, bins))
         }
 
@@ -67,7 +65,7 @@ class OrderAnalytics:
         """
         crb = self._chronoligally_binned(bins)
         return {
-            " ".join(str(i).rjust(2, "0") for i in key): dict(
+            " ".join(str(i) for i in key): dict(
                 sum(
                     [Counter(order.charges) for order in orders],
                     Counter(),
@@ -100,7 +98,7 @@ class OrderAnalytics:
             min_time = min(
                 orders_, key=lambda x: (x.mCancellationTime, x.delivery_time_in_seconds)
             )
-            deltime_dict[" ".join(str(i).rjust(2, "0") for i in key)] = alias.DelTime(
+            deltime_dict[" ".join(str(i) for i in key)] = alias.DelTime(
                 deliveries=len(deltime),
                 mean_promised=round(st.mean(sla_time), 4),
                 mean_actual=round(st.mean(deltime), 4),
@@ -126,9 +124,7 @@ class OrderAnalytics:
     ) -> dict[str, alias.Punctuality]:
         crb = self._chronoligally_binned(bins)
         return {
-            " ".join(
-                str(i).rjust(2, "0") for i in key
-            ): self._get_order_punctuality_details(list(orders))
+            " ".join(str(i) for i in key): self._get_ordpunct_details(list(orders))
             for key, orders in groupby(crb, lambda x: self._cmp(x, bins))
         }
 
@@ -144,7 +140,7 @@ class OrderAnalytics:
                     continue
                 dist_travelled += order.restaurant.customer_distance[1]
                 orders_placed += 1
-            distance_dict[" ".join(str(i).rjust(2, "0") for i in key)] = alias.Distance(
+            distance_dict[" ".join(str(i) for i in key)] = alias.Distance(
                 distance_covered=round(dist_travelled, 4),
                 orders_placed=orders_placed,
                 distance_covered_per_order=round(dist_travelled / orders_placed, 4),
@@ -157,9 +153,7 @@ class OrderAnalytics:
     ) -> dict[str, alias.SuperBenefits]:
         crb = self._chronoligally_binned(bins)
         return {
-            " ".join(
-                str(i).rjust(2, "0") for i in key
-            ): self._get_super_benefits_detail(list(orders))
+            " ".join(str(i) for i in key): self._get_super_benefits_detail(list(orders))
             for key, orders in groupby(crb, lambda x: self._cmp(x, bins))
         }
 
@@ -194,9 +188,7 @@ class OrderAnalytics:
             orders_ = list(orders)
             furthest = max(orders_, key=lambda x: x.restaurant.customer_distance[1])
             f_rest = furthest.restaurant
-            furthest_dict[
-                " ".join(str(i).rjust(2, "0") for i in key)
-            ] = alias.FurthestOrder(
+            furthest_dict[" ".join(str(i) for i in key)] = alias.FurthestOrder(
                 distance_covered=furthest.restaurant.customer_distance[1],
                 restaurant=f"{f_rest.name}, {f_rest.area_name}, {f_rest.city_name}",
                 items=[item.name for item in furthest.items],
@@ -209,10 +201,7 @@ class OrderAnalytics:
     def _chronoligally_binned(self, bins: str) -> list[Order]:
         return sorted(self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True))
 
-    def _get_order_punctuality_details(
-        self,
-        orders: list[Order],
-    ) -> alias.Punctuality:
+    def _get_ordpunct_details(self, orders: list[Order]) -> alias.Punctuality:
         on_time = 0
         late = 0
         max_time = 0
@@ -240,12 +229,12 @@ class OrderAnalytics:
         # cannot use set() as it doesnot preserve order
         bin_ = list(dict.fromkeys(bin_))
         attr_mapping = {
-            "hour": order.order_time.hour,
-            "day": order.order_time.day,
+            "hour": order.order_time.strftime("%H"),
+            "day": order.order_time.strftime("%d"),
             "week": order.order_time.isoweekday(),
             "week_": order.order_time.strftime("%A"),
-            "calweek": order.order_time.isocalendar().week,
-            "month": order.order_time.month,
+            "calweek": order.order_time.strftime("%U"),
+            "month": order.order_time.strftime("%m"),
             "month_": order.order_time.strftime("%B"),
             "year": order.order_time.year,
         }
