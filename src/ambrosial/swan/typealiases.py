@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import TypedDict, Union
+from typing import Literal, TypedDict, Union
 
 from pydantic import HttpUrl
 
-from ambrosial.swiggy.datamodel.typealiases import OrderTypeHint
+from ambrosial.swiggy.datamodel.typealiases import OfferTypeHint, OrderTypeHint
 
 
 class Coordindates(TypedDict):
@@ -93,3 +93,20 @@ class FurthestOrder(TypedDict):
     delivered_by: str
     time_taken: str
     was_on_time: bool
+
+
+class ExtremeDiscount(TypedDict):
+    amount: float
+    coupon: str
+    order_id: list[int]
+
+
+class OfferStatistics(TypedDict):
+    total_discount: float
+    discount_breakup: OfferTypeHint.DISCOUNT_SHARE
+    average_discount: dict[Literal["orders_w_offers", "all_orders"], float]
+    std_dev_discount: float
+    minimum_discount: ExtremeDiscount
+    maximum_discount: ExtremeDiscount
+    mode_discount: list[float]
+    median_discount: float

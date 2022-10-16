@@ -103,7 +103,7 @@ class OrderAnalytics:
                 mean_promised=round(st.mean(sla_time), 4),
                 mean_actual=round(st.mean(deltime), 4),
                 median=round(st.median(deltime), 4),
-                std_dev=round(st.stdev(deltime), 4) if len(deltime) > 1 else -1,
+                std_dev=round(st.stdev(deltime), 4) if len(deltime) > 1 else -1.0,
                 maximum=alias.DelTimeExtreme(
                     promised=max_time.sla_time,
                     actual=round(max_time.delivery_time_in_seconds / conv, 4),

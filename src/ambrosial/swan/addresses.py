@@ -63,7 +63,7 @@ class AddressAnalytics:
             address: alias.DeliveryTimeStats(
                 mean=round(st.mean(total_dt), 4),
                 median=round(st.median(total_dt), 4),
-                std_dev=round(st.stdev(total_dt), 4) if len(total_dt) > 1 else -1,
+                std_dev=round(st.stdev(total_dt), 4) if len(total_dt) > 1 else -1.0,
                 maximum=round(max(total_dt), 4),
                 minimum=round(min(total_dt), 4),
                 total_deliveries=len(total_dt),
