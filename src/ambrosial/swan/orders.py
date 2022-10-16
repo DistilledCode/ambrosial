@@ -15,7 +15,7 @@ class OrderAnalytics:
         self.all_orders: list[Order] = self.swiggy.get_orders()
 
     def group(self) -> NoReturn:
-        raise NotImplementedError("Each order is unique. Same as Swiggy.get_orders()")
+        raise NotImplementedError("Each order is unique. Use Swiggy.get_orders()")
 
     def group_by(self, attr: str) -> dict[str, int]:
         return dict(Counter(getattr(i, attr) for i in self.all_orders).most_common())

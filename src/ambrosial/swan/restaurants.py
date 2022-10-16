@@ -29,13 +29,9 @@ class RestaurantAnalytics:
             ).most_common()
         )
 
-    def grouped_instances(
-        self,
-        key: str,
-        attr: Optional[str] = None,
-    ) -> dict[Any, Any]:
+    def grouped_instances(self, key: str, attr: Optional[str] = None) -> dict[Any, Any]:
         group_dict = defaultdict(list)
-        for rest in self.swiggy.get_restaurants():
+        for rest in self.all_restaurants:
             if attr is not None:
                 group_dict[getattr(rest, key)].append(getattr(rest, attr))
             else:

@@ -13,7 +13,7 @@ class OfferAnalytics:
         self.all_offers = self.swiggy.get_offers()
 
     def group(self) -> NoReturn:
-        raise NotImplementedError("Each offer is unique. Same as Swiggy.get_offers()")
+        raise NotImplementedError("Each offer is unique. Use Swiggy.get_offers()")
 
     def group_by(self, attr: str) -> dict[str, int]:
         if attr not in list(Offer.__annotations__):
@@ -81,6 +81,9 @@ class PaymentAnalytics:
     def __init__(self, swiggy: Swiggy) -> None:
         self.swiggy = swiggy
         self.all_payments = self.swiggy.get_payments()
+
+    def group(self) -> NoReturn:
+        raise NotImplementedError("Each payment is unique. Use Swiggy.get_payments()")
 
     def group_by(self, attr: str) -> dict[str, int]:
         return dict(Counter(getattr(i, attr) for i in self.all_payments).most_common())

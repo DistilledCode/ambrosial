@@ -31,7 +31,7 @@ class ItemAnalytics:
 
     def grouped_instances(self, key: str, attr: Optional[str] = None) -> dict[Any, Any]:
         g_dict = defaultdict(list)
-        for item in self.swiggy.get_items():
+        for item in self.all_items:
             if attr is None:
                 g_dict[getattr(item, key)].append(item)
             else:
