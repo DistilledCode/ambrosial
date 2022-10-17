@@ -2,7 +2,7 @@ from datetime import date
 from typing import Any, Literal, Optional
 
 from ambrosial.swan import SwiggyAnalytics
-from ambrosial.swich.helper import heatmap
+from ambrosial.swich.helper import ghubmap
 
 
 def july_calmon_args(kwargs: dict[str, Any]) -> dict[str, Any]:
@@ -23,7 +23,7 @@ def get_details(
     drange: Optional[tuple[str, str]],
     bins: str,
 ) -> tuple[list[date], list[int]]:
-    return heatmap.get_details(
+    return ghubmap.get_details(
         code=code,
         swan=swan,
         drange=drange,

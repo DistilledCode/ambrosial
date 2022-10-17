@@ -27,7 +27,7 @@ class CalendarPlot:
             kwargs=kwargs,
         )
 
-    def cal_order_number(
+    def cal_order_count(
         self,
         date_range: Optional[tuple[str, str]] = None,
         show_plot: bool = False,
@@ -43,29 +43,29 @@ class CalendarPlot:
     def month_order_amount(
         self,
         month: int,
-        date_range: Optional[tuple[str, str]] = None,
+        year: int,
         show_plot: bool = False,
         **kwargs: Any,
     ) -> None:
         self._month_plot(
             code="oa",
             month=month,
-            date_range=date_range,
+            year=year,
             show_plot=show_plot,
             kwargs=kwargs,
         )
 
-    def month_order_number(
+    def month_order_count(
         self,
         month: int,
-        date_range: Optional[tuple[str, str]] = None,
+        year: int,
         show_plot: bool = False,
         **kwargs: Any,
     ) -> None:
         self._month_plot(
             code="on",
             month=month,
-            date_range=date_range,
+            year=year,
             show_plot=show_plot,
             kwargs=kwargs,
         )
@@ -74,7 +74,7 @@ class CalendarPlot:
         self,
         code: Literal["on", "oa"],
         month: int,
-        date_range: Optional[tuple[str, str]],
+        year: int,
         show_plot: bool,
         kwargs: dict[str, Any],
     ) -> None:
@@ -82,10 +82,10 @@ class CalendarPlot:
             "on": f"Number of orders in {calendar.month_abbr[month]}",
             "oa": f"Amount spent in {calendar.month_abbr[month]}",
         }
-        date_range_, values = get_details(code, self.swan, date_range, BINS)
+        date_range_, values = get_details(code, self.swan, drange=None, bins=BINS)
         kwargs.setdefault("title", default_title.get(code))
         jargs = july_calmon_args(kwargs)
-        july.month_plot(dates=date_range_, data=values, month=month, **jargs)
+        july.month_plot(dates=date_range_, data=values, month=month, year=year, **jargs)
         plt.suptitle(kwargs["title"], fontsize="x-large", y=1.0)
         if show_plot:
             plt.show()
@@ -98,7 +98,7 @@ class CalendarPlot:
         kwargs: dict[str, Any],
     ) -> None:
         default_title = {
-            "on": "Number of orders",
+            "on": "Order Count",
             "oa": "Amount Spent",
         }
         date_range_, values = get_details(code, self.swan, date_range, BINS)

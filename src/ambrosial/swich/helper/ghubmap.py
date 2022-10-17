@@ -26,7 +26,7 @@ def get_details(
 ) -> tuple[list[date], list[int]]:
     func_dict: dict[str, Callable[..., tuple[list[date], list[int]]]] = {
         "oa": _get_order_amount_details,
-        "on": _get_order_number_details,
+        "on": _get_order_count_details,
     }
     return func_dict[code](swan, drange, bins)
 
@@ -42,7 +42,7 @@ def _get_order_amount_details(
     return date_range_, values
 
 
-def _get_order_number_details(
+def _get_order_count_details(
     swan: SwiggyAnalytics,
     drange: Optional[tuple[str, str]],
     bins: str,

@@ -3,7 +3,7 @@ from typing import Optional
 from ambrosial.swan import SwiggyAnalytics
 from ambrosial.swich.barplot import BarPlot
 from ambrosial.swich.calendarplot import CalendarPlot
-from ambrosial.swich.heatmap import HeatMap
+from ambrosial.swich.ghubmap import GitHubMap
 from ambrosial.swich.map import Map
 from ambrosial.swich.regression import RegressionPlot
 from ambrosial.swich.wordcloud import WordCloud
@@ -15,7 +15,7 @@ class SwiggyChart:
         if self.swan is None:
             self.swan = SwiggyAnalytics()
 
-        self.heatmap = HeatMap(self.swan)
+        self.ghubmap = GitHubMap(self.swan)
         self.calplot = CalendarPlot(self.swan)
         self.wcloud = WordCloud(self.swan)
         self.regplot = RegressionPlot(self.swan)
