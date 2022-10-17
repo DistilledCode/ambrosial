@@ -6,6 +6,28 @@ import pandas as pd
 from ambrosial.swan import SwiggyAnalytics
 
 
+def _dataframe(
+    instances: dict[Any, Any],
+    threshold: int,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    df: dict[str, list[Any]] = {"y": [], "x": []}
+    ordering = {}
+    for category_name, list_val in instances.items():
+        if len(list_val) < threshold:
+            continue
+        ordering[category_name] = {
+            "count": len(list_val),
+            "total": sum(list_val),
+            # "average": st.mean(list_val),
+            "std_dev": st.stdev(list_val) if len(list_val) > 1 else 0,
+        }
+        df["y"].extend([category_name] * len(list_val))
+        df["x"].extend(list_val)
+    ordering_df = pd.DataFrame(ordering)
+    ordering_df = ordering_df.transpose().reset_index(0, names=["category_name"])
+    return pd.DataFrame(df), ordering_df
+
+
 def _df_restaurant_deltime(
     swan: SwiggyAnalytics,
     threshold: int,
@@ -16,7 +38,6 @@ def _df_restaurant_deltime(
         key="restaurant",
         attr="delivery_time_in_seconds",
     )
-
     for restaurant, deltime in instances.items():
         if len(deltime) < threshold:
             continue
@@ -24,7 +45,6 @@ def _df_restaurant_deltime(
         ordering[key] = {
             "count": len(deltime),
             "total": sum(deltime) / 60,
-            "average": st.mean(deltime) / 60,
             "std_dev": st.stdev(deltime) / 60 if len(deltime) > 1 else 0,
         }
         df["y"].extend([key] * len(deltime))
@@ -39,23 +59,7 @@ def _df_item_spending(
     threshold: int,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     instances = swan.items.grouped_instances(key="name", attr="effective_item_price")
-    df: dict[str, list[Any]] = {"y": [], "x": []}
-    ordering = {}
-    for name, amount in instances.items():
-        if len(amount) < threshold:
-            continue
-        ordering[name] = {
-            "count": len(amount),
-            "total": sum(amount),
-            "average": st.mean(amount),
-            "std_dev": st.stdev(amount) if len(amount) > 1 else 0,
-        }
-        df["y"].extend([name] * len(amount))
-        df["x"].extend(amount)
-    ordering_df = (
-        pd.DataFrame(ordering).transpose().reset_index(0, names=["category_name"])
-    )
-    return pd.DataFrame(df), ordering_df
+    return _dataframe(instances=instances, threshold=threshold)
 
 
 def _df_coupon_discount(
@@ -66,26 +70,33 @@ def _df_coupon_discount(
         key="coupon_applied",
         attr="total_offer_discount",
     )
-    df: dict[str, list[Any]] = {"y": [], "x": []}
-    ordering = {}
-    for coupon_code, discount in instances.items():
-        if len(discount) < threshold:
-            continue
-        ordering[coupon_code] = {
-            "count": len(discount),
-            "total": sum(discount),
-            "average": st.mean(discount),
-            "std_dev": st.stdev(discount) if len(discount) > 1 else 0,
-        }
-        df["y"].extend([coupon_code] * len(discount))
-        df["x"].extend(discount)
-    ordering_df = pd.DataFrame(ordering)
-    ordering_df = ordering_df.transpose().reset_index(0, names=["category_name"])
-    return pd.DataFrame(df), ordering_df
+    return _dataframe(instances=instances, threshold=threshold)
+
+
+def _df_payment_method(
+    swan: SwiggyAnalytics,
+    threshold: int,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    instances = swan.payments.grouped_instances(
+        key="paymentMethod",
+        attr="amount",
+    )
+    return _dataframe(instances=instances, threshold=threshold)
+
+
+def _df_payment_type(
+    swan: SwiggyAnalytics,
+    threshold: int,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    instances = swan.payments.grouped_instances(
+        key="paymentMethodDisplayName",
+        attr="amount",
+    )
+    return _dataframe(instances=instances, threshold=threshold)
 
 
 def get_dataframe(
-    code: Literal["rd", "is", "od"],
+    code: Literal["rd", "is", "od", "pm", "pt"],
     swan: SwiggyAnalytics,
     threshold: int,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -93,6 +104,8 @@ def get_dataframe(
         "rd": _df_restaurant_deltime,
         "is": _df_item_spending,
         "od": _df_coupon_discount,
+        "pm": _df_payment_method,
+        "pt": _df_payment_type,
     }
 
     return func_dict[code](swan=swan, threshold=threshold)

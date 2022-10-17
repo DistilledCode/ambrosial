@@ -8,7 +8,7 @@ from matplotlib.ticker import MaxNLocator
 from ambrosial.swan import SwiggyAnalytics
 from ambrosial.swich.helper.barplot import get_dataframe
 
-ORDER_BY_LITERALS = Literal["count", "total", "average", "std_dev"]
+ORDER_BY_LITERALS = Literal["count", "total", "std_dev"]
 
 
 class BarPlot:
@@ -50,7 +50,6 @@ class BarPlot:
         order_title_dict = {
             "count": "Item Count",
             "totalal": "Total Amount Paid",
-            "average": "Average Cost per Item",
             "std_dev": "Std. Dev. of Item Cost",
         }
         self._make_barplot(
@@ -58,7 +57,7 @@ class BarPlot:
             ordering_info=(order_by, order_title_dict),
             ascending=ascending,
             errorbar=errorbar,
-            axis_labels=("Average Cost per Item", "Item Name"),
+            axis_labels=("Average Item Cost", "Item Name"),
         )
 
     def coupon_discount(
@@ -73,7 +72,6 @@ class BarPlot:
         order_title_dict = {
             "count": "Coupon Count",
             "total": "Total Discount Availed",
-            "average": "Average Discount Per Code",
             "std_dev": "Std. Dev. of Discount Availed",
         }
         self._make_barplot(
@@ -81,7 +79,51 @@ class BarPlot:
             ordering_info=(order_by, order_title_dict),
             ascending=ascending,
             errorbar=errorbar,
-            axis_labels=("Discount Availed Per Code", "Coupon Code"),
+            axis_labels=("Average Discount Availed", "Coupon Code"),
+        )
+
+    def payment_method(
+        self,
+        threshold: int = 0,
+        order_by: ORDER_BY_LITERALS = "total",
+        ascending: bool = False,
+        errorbar: tuple[str, int] = ("sd", 1),
+    ) -> None:
+        df, ordering_df = get_dataframe(code="pm", swan=self.swan, threshold=threshold)
+        ordering_df.sort_values(by=[order_by], inplace=True, ascending=ascending)
+        order_title_dict = {
+            "count": "Method Count",
+            "total": "Total Payment Made",
+            "std_dev": "Std. Dev. of Amount Transacted",
+        }
+        self._make_barplot(
+            dataframes=(df, ordering_df),
+            ordering_info=(order_by, order_title_dict),
+            ascending=ascending,
+            errorbar=errorbar,
+            axis_labels=("Average Amount Per Transaction", "Payment Method"),
+        )
+
+    def payment_type(
+        self,
+        threshold: int = 0,
+        order_by: ORDER_BY_LITERALS = "total",
+        ascending: bool = False,
+        errorbar: tuple[str, int] = ("sd", 1),
+    ) -> None:
+        df, ordering_df = get_dataframe(code="pt", swan=self.swan, threshold=threshold)
+        ordering_df.sort_values(by=[order_by], inplace=True, ascending=ascending)
+        order_title_dict = {
+            "count": "Type Count",
+            "total": "Total Payment Made",
+            "std_dev": "Std. Dev. of Amount Transacted",
+        }
+        self._make_barplot(
+            dataframes=(df, ordering_df),
+            ordering_info=(order_by, order_title_dict),
+            ascending=ascending,
+            errorbar=errorbar,
+            axis_labels=("Average Amount Per Transaction", "Payment Type"),
         )
 
     def _make_barplot(
