@@ -39,8 +39,6 @@ class Swiggy:
         return not bool(self._response_json["data"]["orders"])
 
     def get_account_info(self) -> utils.UserInfo:
-        if self._customer_info is not None:
-            return self._customer_info
         temp_cookie = self._cookie_jar
         temp_cookie.set_cookie(utils.get_empty_sid())
         self._response = get(self._p_url, cookies=temp_cookie)

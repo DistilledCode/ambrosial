@@ -67,7 +67,13 @@ class ItemTypeHint:
     ADDONS: TypeAlias = tuple[dict[str, Union[str, dict[str, str]]], ...]
     CATEGORY_DETAILS: TypeAlias = dict[Literal["category", "sub_category"], str]
     ITEM_CHARGES: TypeAlias = dict[
-        Literal["GST", "Service Charges", "Service Tax", "Vat"], float
+        Literal[
+            "GST",
+            "Service Charges",
+            "Service Tax",
+            "Vat",
+        ],
+        float,
     ]
 
 
