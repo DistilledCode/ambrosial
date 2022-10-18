@@ -83,21 +83,16 @@ class OrderAnalytics:
         crb = self._chronologically_binned(bins)
         deltime_dict = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
-            orders_ = list(orders)
-            deltime = [
-                order.delivery_time_in_seconds / conv
-                for order in orders_
-                if order.delivery_time_in_seconds != 0
-            ]
-            sla_time = [
-                order.sla_time
-                for order in orders_
-                if order.delivery_time_in_seconds != 0
-            ]
+            orders_ = [order for order in orders if order.mCancellationTime == 0]
+            if len(orders_) == 0:
+                continue
+            deltime: list[float] = []
+            sla_time: list[int] = []
+            for order in orders_:
+                deltime.append(order.delivery_time_in_seconds / conv)
+                sla_time.append(order.sla_time)
             max_time = max(orders_, key=lambda x: x.delivery_time_in_seconds)
-            min_time = min(
-                orders_, key=lambda x: (x.mCancellationTime, x.delivery_time_in_seconds)
-            )
+            min_time = min(orders_, key=lambda x: x.delivery_time_in_seconds)
             deltime_dict[" ".join(str(i) for i in key)] = alias.DelTime(
                 deliveries=len(deltime),
                 mean_promised=round(st.mean(sla_time), 4),
