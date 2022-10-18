@@ -8,7 +8,7 @@ def _order(
     obj_id: Union[str, int],
 ) -> SwiggyOrderDict:
     for order in order_list:
-        if order["order_id"] == obj_id:
+        if order["order_id"] == int(obj_id):
             return order
     raise ValueError(f"order with id = {repr(obj_id)} doesn't exist.")
 
@@ -19,7 +19,7 @@ def _item(
 ) -> SwiggyOrderDict:
     for order in order_list:
         for item in order["order_items"]:
-            if item["item_id"] == obj_id:
+            if item["item_id"] == str(obj_id):
                 return order
     raise ValueError(f"order item with id = {repr(obj_id)} doesn't exist.")
 
@@ -29,7 +29,7 @@ def _restaurant(
     obj_id: Union[str, int],
 ) -> SwiggyOrderDict:
     for order in order_list:
-        if order["restaurant_id"] == obj_id:
+        if order["restaurant_id"] == str(obj_id):
             return order
     raise ValueError(f"restaurant with id = {repr(obj_id)} doesn't exist.")
 
@@ -45,16 +45,16 @@ def _address(
         if all(
             (
                 ddav is True,
-                order["delivery_address"]["id"] == obj_id,
+                order["delivery_address"]["id"] == str(obj_id),
                 order["delivery_address"]["version"] == ver,
             )
         ):
             return order
-        if ddav is False and order["delivery_address"]["id"] == obj_id:
+        if ddav is False and order["delivery_address"]["id"] == str(obj_id):
             return order
     raise ValueError(
-        f"Address with (id,ver) = ({obj_id},{ver}) doesn't exist."
-    ) if ddav else ValueError(f"Address with id = {obj_id} doesn't exist.")
+        f"Address with (id,ver) = ({repr(obj_id)},{repr(ver)}) doesn't exist."
+    ) if ddav else ValueError(f"Address with id = {repr(obj_id)} doesn't exist.")
 
 
 def _payment(
@@ -62,20 +62,10 @@ def _payment(
     obj_id: Union[str, int],
 ) -> SwiggyOrderDict:
     for order in order_list:
-        if order["transactionId"] == obj_id:
-            return order
-    raise ValueError(f"Payment with transaction id = {repr(obj_id)} doesn't exist.")
-
-
-def _offer(
-    order_list: list[SwiggyOrderDict],
-    obj_id: Union[str, int],
-) -> SwiggyOrderDict:
-    for order in order_list:
-        for offer in order["offers_data"]:
-            if offer["order_id"] == obj_id:
+        for payment in order["payment_transactions"]:
+            if payment["transactionId"] == str(obj_id):
                 return order
-    raise ValueError(f"Oddress with order_id = {repr(obj_id)} doesn't exist.")
+    raise ValueError(f"Payment with transaction id = {repr(obj_id)} doesn't exist.")
 
 
 def find_order(
@@ -93,6 +83,6 @@ def find_order(
         "item": _item,
         "restaurant": _restaurant,
         "payment": _payment,
-        "offer": _offer,
+        "offer": _order,
     }
     return obj_dict[obj](order_list, obj_id)
