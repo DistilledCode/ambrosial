@@ -43,14 +43,14 @@ class OrderAnalytics:
         return dict(group_dict)
 
     def tseries_amount(self, bins: str = "year+month_") -> dict[str, int]:
-        crb = self._chronoligally_binned(bins)
+        crb = self._chronologically_binned(bins)
         return {
             " ".join(str(i) for i in key): sum(order.order_total for order in list(val))
             for key, val in groupby(crb, lambda x: self._cmp(x, bins))
         }
 
     def tseries_orders(self, bins: str = "year+month_") -> dict[str, int]:
-        crb = self._chronoligally_binned(bins)
+        crb = self._chronologically_binned(bins)
         return {
             " ".join(str(i) for i in key): len(list(val))
             for key, val in groupby(crb, lambda x: self._cmp(x, bins))
@@ -63,7 +63,7 @@ class OrderAnalytics:
         Delivery charges are zero only when the order had free delivery (Swiggy Super)
         In that case check free_delivery_discount_hit attribute
         """
-        crb = self._chronoligally_binned(bins)
+        crb = self._chronologically_binned(bins)
         return {
             " ".join(str(i) for i in key): dict(
                 sum(
@@ -80,7 +80,7 @@ class OrderAnalytics:
         unit: str = "minute",
     ) -> dict[str, alias.DelTime]:
         conv = {"minute": 60, "hour": 3600}.get(unit, 1)
-        crb = self._chronoligally_binned(bins)
+        crb = self._chronologically_binned(bins)
         deltime_dict = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
             orders_ = list(orders)
@@ -122,28 +122,28 @@ class OrderAnalytics:
     def tseries_punctuality(
         self, bins: str = "year+month_"
     ) -> dict[str, alias.Punctuality]:
-        crb = self._chronoligally_binned(bins)
+        crb = self._chronologically_binned(bins)
         return {
             " ".join(str(i) for i in key): self._get_ordpunct_details(list(orders))
             for key, orders in groupby(crb, lambda x: self._cmp(x, bins))
         }
 
     def tseries_distance(self, bins: str = "year+month_") -> dict[str, alias.Distance]:
-        crb = self._chronoligally_binned(bins)
+        crb = self._chronologically_binned(bins)
         distance_dict = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
-            orders_ = list(orders)
-            dist_travelled: float = 0.0
-            orders_placed = 0
-            for order in orders_:
-                if order.mCancellationTime:
-                    continue
-                dist_travelled += order.restaurant.customer_distance[1]
-                orders_placed += 1
+            orders_ = [order for order in orders if order.mCancellationTime == 0]
+            if len(orders_) == 0:
+                continue
+            distance = sum(order.restaurant.customer_distance[1] for order in orders_)
+            orders_placed = len(orders_)
+            # for order in orders_:
+            # dist_travelled += order.restaurant.customer_distance[1]
+            # orders_placed += 1
             distance_dict[" ".join(str(i) for i in key)] = alias.Distance(
-                distance_covered=round(dist_travelled, 4),
+                distance_covered=round(distance, 4),
                 orders_placed=orders_placed,
-                distance_covered_per_order=round(dist_travelled / orders_placed, 4),
+                distance_covered_per_order=round(distance / orders_placed, 4),
             )
         return distance_dict
 
@@ -151,7 +151,7 @@ class OrderAnalytics:
         self,
         bins: str = "year+month_",
     ) -> dict[str, alias.SuperBenefits]:
-        crb = self._chronoligally_binned(bins)
+        crb = self._chronologically_binned(bins)
         return {
             " ".join(str(i) for i in key): self._get_super_benefits_detail(list(orders))
             for key, orders in groupby(crb, lambda x: self._cmp(x, bins))
@@ -182,7 +182,7 @@ class OrderAnalytics:
         self,
         bins: str = "week_",
     ) -> dict[str, alias.FurthestOrder]:
-        crb = self._chronoligally_binned(bins)
+        crb = self._chronologically_binned(bins)
         furthest_dict = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
             orders_ = list(orders)
@@ -198,7 +198,7 @@ class OrderAnalytics:
             )
         return furthest_dict
 
-    def _chronoligally_binned(self, bins: str) -> list[Order]:
+    def _chronologically_binned(self, bins: str) -> list[Order]:
         return sorted(self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True))
 
     def _get_ordpunct_details(self, orders: list[Order]) -> alias.Punctuality:
