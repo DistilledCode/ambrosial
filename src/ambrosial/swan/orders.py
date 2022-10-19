@@ -17,7 +17,7 @@ class OrderAnalytics:
     def group(self) -> NoReturn:
         raise NotImplementedError("Each order is unique. Use Swiggy.get_orders()")
 
-    def group_by(self, attr: str) -> dict[str, int]:
+    def group_by(self, attr: str) -> dict[Any, int]:
         return dict(Counter(getattr(i, attr) for i in self.all_orders).most_common())
 
     def grouped_instances(self, key: str, attr: Optional[str] = None) -> dict[Any, Any]:
@@ -132,9 +132,6 @@ class OrderAnalytics:
                 continue
             distance = sum(order.restaurant.customer_distance[1] for order in orders_)
             orders_placed = len(orders_)
-            # for order in orders_:
-            # dist_travelled += order.restaurant.customer_distance[1]
-            # orders_placed += 1
             distance_dict[" ".join(str(i) for i in key)] = alias.Distance(
                 distance_covered=round(distance, 4),
                 orders_placed=orders_placed,
@@ -180,8 +177,7 @@ class OrderAnalytics:
         crb = self._chronologically_binned(bins)
         furthest_dict = {}
         for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
-            orders_ = list(orders)
-            furthest = max(orders_, key=lambda x: x.restaurant.customer_distance[1])
+            furthest = max(orders, key=lambda x: x.restaurant.customer_distance[1])
             f_rest = furthest.restaurant
             furthest_dict[" ".join(str(i) for i in key)] = alias.FurthestOrder(
                 distance_covered=furthest.restaurant.customer_distance[1],
@@ -197,6 +193,8 @@ class OrderAnalytics:
         return sorted(self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True))
 
     def _get_ordpunct_details(self, orders: list[Order]) -> alias.Punctuality:
+        """all instances of `Order` in `orders` were cancelled if:
+        on_time==0 && late==0 && max_time==0 && min_time==24*60"""
         on_time = 0
         late = 0
         max_time = 0
@@ -219,7 +217,6 @@ class OrderAnalytics:
         )
 
     def _cmp(self, order: Order, bins: str, chrono: bool = False) -> tuple:
-        # TODO: include an option to groupby according to custom strftime string
         bin_ = [attr for attr in bins.split("+") if attr]
         # cannot use set() as it doesnot preserve order
         bin_ = list(dict.fromkeys(bin_))
@@ -234,7 +231,10 @@ class OrderAnalytics:
             "year": order.order_time.year,
         }
         if any((x := attr) not in attr_mapping for attr in bin_):
-            raise KeyError(f"cannot group using key: {repr(x)}")
+            raise KeyError(
+                f"Invalid grouping key: {repr(x)}. "
+                f"Available keys: {repr(list(attr_mapping))}"
+            )
         if chrono:
             # else keys will be sorted in alphabetical order instead of chronological
             attr_mapping["month_"] = attr_mapping["month"]

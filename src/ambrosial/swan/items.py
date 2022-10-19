@@ -16,9 +16,9 @@ class ItemAnalytics:
     def group(self) -> dict[Item, int]:
         return dict(Counter(self.all_items).most_common())
 
-    def group_by(self, attr: str) -> dict[str, int]:
+    def group_by(self, attr: str) -> dict[Any, int]:
         if attr == "item_charges":
-            raise NotImplementedError("unhashable attribute type: <dict>")
+            raise NotImplementedError("unhashable type: 'dict'")
         obj_dict = {
             "addons": self._get_addons_detail,
             "variants": self._get_variants_detail,
@@ -42,8 +42,12 @@ class ItemAnalytics:
         self,
         item_id: Optional[int] = None,
     ) -> dict[int, list[alias.History]]:
+        if item_id is not None and self._is_valid_id(item_id):
+            item_list = [item for item in self.all_items if item.item_id == item_id]
+        else:
+            item_list = self.all_items
         hist = defaultdict(list)
-        for item in self.all_items:
+        for item in item_list:
             hist[item.item_id].append(
                 alias.History(
                     order_id=item.order_id,
@@ -51,8 +55,6 @@ class ItemAnalytics:
                     order_time=self.swiggy.get_order(item.order_id).order_time,
                 )
             )
-        if item_id is not None and self._is_valid_id(item_id):
-            return {item_id: hist[item_id]}
         return dict(hist)
 
     def summarise(self, item_id: int) -> alias.Summarise:
@@ -71,11 +73,14 @@ class ItemAnalytics:
         )
 
     def search_item(self, name: str, exact: bool = True) -> list[Item]:
-        return (
-            [item for item in self.all_items if name.lower() == item.name.lower()]
-            if exact
-            else [item for item in self.all_items if name.lower() in item.name.lower()]
-        )
+        if exact:
+            return [
+                item for item in self.all_items if name.lower() == item.name.lower()
+            ]
+        else:
+            return [
+                item for item in self.all_items if name.lower() in item.name.lower()
+            ]
 
     def _is_valid_id(self, item_id: int) -> bool:
         if item_id in [item.item_id for item in self.all_items]:
