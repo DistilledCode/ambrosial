@@ -1,6 +1,5 @@
 from collections import Counter, defaultdict
 from itertools import chain
-from statistics import mean
 from typing import Any, Optional
 
 import ambrosial.swan.typealiases as alias
@@ -60,16 +59,31 @@ class ItemAnalytics:
     def summarise(self, item_id: int) -> alias.Summarise:
         self._is_valid_id(item_id)
         instances = [item for item in self.all_items if item.item_id == item_id]
+        total_quantity = 0
+        total_base_price = 0.0
+        total_mrp = 0.0
+        total_discount = 0.0
+        total_actual_cost = 0.0
+        total_tax = 0.0
+        received_for_free = 0
+        for item in instances:
+            total_quantity += item.quantity
+            total_base_price += item.base_price
+            total_mrp += item.subtotal
+            total_discount += item.item_total_discount
+            total_actual_cost += item.effective_item_price
+            total_tax += sum(item.item_charges.values())
+            received_for_free += item.free_item_quantity
         return alias.Summarise(
-            total_quantity=sum(i.quantity for i in instances),
-            avg_base_price=round(mean(i.base_price for i in instances), 3),
-            total_mrp=round(sum(i.subtotal for i in instances), 3),
-            total_discount=round(sum(i.item_total_discount for i in instances), 3),
-            total_actual_cost=round(sum(i.effective_item_price for i in instances), 3),
-            total_tax=round(sum(sum(i.item_charges.values()) for i in instances), 3),
-            avg_actual_cost=round(mean(i.effective_item_price for i in instances), 3),
+            total_quantity=total_quantity,
+            avg_base_price=round(total_base_price / len(instances), 3),
+            total_mrp=round(total_mrp, 3),
+            total_discount=round(total_discount, 3),
+            total_actual_cost=round(total_actual_cost, 3),
+            total_tax=round(total_tax, 3),
+            avg_actual_cost=round(total_actual_cost / len(instances), 3),
             image_url=instances[0].image,
-            received_for_free=sum(i.free_item_quantity for i in instances),
+            received_for_free=received_for_free,
         )
 
     def search_item(self, name: str, exact: bool = True) -> list[Item]:
