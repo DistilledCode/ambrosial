@@ -1,5 +1,6 @@
 import calendar
-from typing import Any, Literal, Optional
+import heapq
+from typing import Any, Literal
 
 import july
 import matplotlib.pyplot as plt
@@ -16,27 +17,19 @@ class CalendarPlot:
 
     def cal_order_amount(
         self,
-        date_range: Optional[tuple[str, str]] = None,
-        show_plot: bool = False,
         **kwargs: Any,
     ) -> None:
         self._calendar_plot(
             code="oa",
-            date_range=date_range,
-            show_plot=show_plot,
             kwargs=kwargs,
         )
 
     def cal_order_count(
         self,
-        date_range: Optional[tuple[str, str]] = None,
-        show_plot: bool = False,
         **kwargs: Any,
     ) -> None:
         self._calendar_plot(
             code="on",
-            date_range=date_range,
-            show_plot=show_plot,
             kwargs=kwargs,
         )
 
@@ -44,14 +37,12 @@ class CalendarPlot:
         self,
         month: int,
         year: int,
-        show_plot: bool = False,
         **kwargs: Any,
     ) -> None:
         self._month_plot(
             code="oa",
             month=month,
             year=year,
-            show_plot=show_plot,
             kwargs=kwargs,
         )
 
@@ -59,14 +50,12 @@ class CalendarPlot:
         self,
         month: int,
         year: int,
-        show_plot: bool = False,
         **kwargs: Any,
     ) -> None:
         self._month_plot(
             code="on",
             month=month,
             year=year,
-            show_plot=show_plot,
             kwargs=kwargs,
         )
 
@@ -75,36 +64,43 @@ class CalendarPlot:
         code: Literal["on", "oa"],
         month: int,
         year: int,
-        show_plot: bool,
         kwargs: dict[str, Any],
     ) -> None:
+        date_range_, values = get_details(code, self.swan, bins=BINS)
+        month_total = sum(
+            value
+            for day, value in zip(date_range_, values)
+            if day.month == month and day.year == year
+        )
         default_title = {
-            "on": f"Number of orders in {calendar.month_abbr[month]}",
-            "oa": f"Amount spent in {calendar.month_abbr[month]}",
+            "on": "Total Order Count in "
+            f"{calendar.month_abbr[month]}, {year}: {month_total}",
+            "oa": "Total Amount Spent in "
+            f"{calendar.month_abbr[month]}, {year}: {month_total}",
         }
-        date_range_, values = get_details(code, self.swan, drange=None, bins=BINS)
         kwargs.setdefault("title", default_title.get(code))
         jargs = july_calmon_args(kwargs)
-        july.month_plot(dates=date_range_, data=values, month=month, year=year, **jargs)
-        plt.suptitle(kwargs["title"], fontsize="x-large", y=1.0)
-        if show_plot:
-            plt.show()
+        july.month_plot(
+            dates=date_range_,
+            data=values,
+            month=month,
+            year=year,
+            cmin=int(heapq.nsmallest(2, set(values))[-1] * 0.90),
+            **jargs,
+        )
+        plt.suptitle(kwargs["title"], y=1.0)
 
     def _calendar_plot(
         self,
         code: Literal["on", "oa"],
-        date_range: Optional[tuple[str, str]],
-        show_plot: bool,
         kwargs: dict[str, Any],
     ) -> None:
+        date_range_, values = get_details(code, self.swan, BINS)
         default_title = {
-            "on": "Order Count",
-            "oa": "Amount Spent",
+            "on": f"Total Order Count: {sum(values)}",
+            "oa": f"Total Amount Spent: {sum(values)}",
         }
-        date_range_, values = get_details(code, self.swan, date_range, BINS)
         kwargs.setdefault("cmap", "golden")
         kwargs.setdefault("title", default_title.get(code))
         july.calendar_plot(dates=date_range_, data=values, **kwargs)
-        plt.suptitle(kwargs["title"], fontsize="x-large", y=1.0)
-        if show_plot:
-            plt.show()
+        plt.suptitle(kwargs["title"], y=1.0)
