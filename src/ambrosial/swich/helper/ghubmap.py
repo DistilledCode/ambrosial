@@ -104,8 +104,15 @@ def _get_drange_from_orders(
 ) -> list[date]:
     min_date = min(orders, key=lambda x: x.order_time).order_time.date()
     max_date = max(orders, key=lambda x: x.order_time).order_time.date()
-    min_date = min_date.replace(day=1)
-    max_date = (max_date + timedelta(days=31)).replace(day=1) - timedelta(days=1)
+    month_diff = (max_date.month - min_date.month) + (
+        12 if min_date.month > max_date.month else 0
+    )
+    # if difference is less than 4 months then the graph is clipping into cbar
+    if month_diff < 4:
+        min_date = (min_date - timedelta(days=28 * (4 - month_diff))).replace(day=1)
+    else:
+        min_date = min_date.replace(day=1)
+    max_date = (max_date + timedelta(days=32)).replace(day=1) - timedelta(days=1)
     return date_range(min_date, max_date)
 
 
@@ -117,4 +124,7 @@ def extreme_value_str(dates: list[date], values: list[int]) -> str:
         if val == actual_min:
             min_date = day
             break
-    return f"Min: {actual_min} on {min_date} | " f"Max: {actual_max} on {max_date}"
+    return (
+        f"Min: {round(actual_min)} on {min_date} | "
+        f"Max: {round(actual_max)} on {max_date}"
+    )
