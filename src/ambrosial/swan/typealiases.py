@@ -36,7 +36,7 @@ class History(TypedDict):
 class Summarise(TypedDict):
     total_quantity: int
     avg_base_price: float
-    total_mrp: float
+    total_base_price: float
     total_discount: float
     total_actual_cost: float
     total_tax: float

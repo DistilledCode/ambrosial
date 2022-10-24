@@ -57,31 +57,36 @@ class ItemAnalytics:
         return dict(hist)
 
     def summarise(self, item_id: int) -> alias.Summarise:
+        """
+        total_actual_cost & avg_actual_cost inlcudes GST but excludes
+        Packaging, Convenience, Cancellation, and Delivery Charges.
+        Those are calculated for each order.
+        """
         self._is_valid_id(item_id)
         instances = [item for item in self.all_items if item.item_id == item_id]
         total_quantity = 0
         total_base_price = 0.0
-        total_mrp = 0.0
+        total_base_price = 0.0
         total_discount = 0.0
         total_actual_cost = 0.0
         total_tax = 0.0
         received_for_free = 0
         for item in instances:
-            total_quantity += item.quantity
-            total_base_price += item.base_price
-            total_mrp += item.subtotal
+            total_quantity += item.quantity - item.free_item_quantity
+            total_base_price += item.base_price * item.quantity
+            total_base_price += item.subtotal
             total_discount += item.item_total_discount
             total_actual_cost += item.effective_item_price
             total_tax += sum(item.item_charges.values())
             received_for_free += item.free_item_quantity
         return alias.Summarise(
             total_quantity=total_quantity,
-            avg_base_price=round(total_base_price / len(instances), 3),
-            total_mrp=round(total_mrp, 3),
+            avg_base_price=round(total_base_price / total_quantity, 3),
+            total_base_price=round(total_base_price, 3),
             total_discount=round(total_discount, 3),
             total_actual_cost=round(total_actual_cost, 3),
             total_tax=round(total_tax, 3),
-            avg_actual_cost=round(total_actual_cost / len(instances), 3),
+            avg_actual_cost=round(total_actual_cost / total_quantity, 3),
             image_url=instances[0].image,
             received_for_free=received_for_free,
         )
