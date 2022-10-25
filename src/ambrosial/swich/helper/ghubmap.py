@@ -1,11 +1,12 @@
 import heapq
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any, Callable, Literal
 
 from july.utils import date_range
 
 from ambrosial.swan import SwiggyAnalytics
+from ambrosial.swiggy.datamodel.item import Item
 from ambrosial.swiggy.datamodel.order import Order
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
 
@@ -56,6 +57,38 @@ def get_grouped_restaurant(
         if restaurant.rest_id == restaurant_id:
             return restaurant, orders
     raise ValueError(f"No restauarant with id {repr(restaurant_id)} found")
+
+
+def get_grouped_item(
+    swan: SwiggyAnalytics,
+    item_id: int,
+) -> tuple[Item, list[Order]]:
+    for item, orders in swan.orders.grouped_instances(key="items").items():
+        if item.item_id == item_id:
+            return item, orders
+    raise ValueError(f"No item with id {repr(item_id)} found")
+
+
+def get_item_info(
+    code: Literal["count", "amount"],
+    item: Item,
+    orders: list[Order],
+) -> tuple[list[date], list[int]]:
+    value_dict: dict[date, int] = defaultdict(int)
+    isntances: list[tuple[Item, datetime]] = [
+        (item_, order.order_time)
+        for order in orders
+        for item_ in order.items
+        if item_.item_id == item.item_id
+    ]
+    for item, order_time in isntances:
+        if code == "count":
+            value_dict[order_time.date()] += item.quantity
+        else:
+            value_dict[order_time.date()] += int(item.effective_item_price)
+    drange = _get_drange_from_orders(orders)
+    values = [value_dict.get(day, 0) for day in drange]
+    return drange, values
 
 
 def get_order_info(
@@ -124,7 +157,4 @@ def extreme_value_str(dates: list[date], values: list[int]) -> str:
         if val == actual_min:
             min_date = day
             break
-    return (
-        f"Min: {round(actual_min)} on {min_date} | "
-        f"Max: {round(actual_max)} on {max_date}"
-    )
+    return f"Min: {actual_min} on {min_date} | " f"Max: {actual_max} on {max_date}"
