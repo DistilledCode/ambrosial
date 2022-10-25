@@ -7,7 +7,7 @@ class Item(BaseModel):
     rewardType: str
     has_variantv2: bool
     order_id: int
-    restaurant_id: str
+    restaurant_id: int
     item_id: int
     external_item_id: str
     name: str
