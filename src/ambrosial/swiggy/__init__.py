@@ -1,5 +1,4 @@
 from copy import deepcopy
-from itertools import chain
 from pathlib import Path
 from typing import Any, Optional
 from warnings import warn
@@ -89,9 +88,7 @@ class Swiggy:
         return convert.item(find_order("item", self.orders_refined, id_))
 
     def get_items(self) -> list[Item]:
-        return list(
-            chain.from_iterable([convert.item(order) for order in self.orders_refined])
-        )
+        return [item for order in self.orders_refined for item in convert.item(order)]
 
     def get_restaurant(self, id_: int) -> Restaurant:
         return convert.restaurant(
@@ -127,19 +124,19 @@ class Swiggy:
         return convert.offer(find_order("offer", self.orders_refined, id_))
 
     def get_offers(self) -> list[Offer]:
-        return list(
-            chain.from_iterable([convert.offer(order) for order in self.orders_refined])
-        )
+        return [
+            offer for order in self.orders_refined for offer in convert.offer(order)
+        ]
 
     def get_payment(self, id_: int) -> list[Payment]:
         return convert.payment(find_order("payment", self.orders_refined, id_))
 
     def get_payments(self) -> list[Payment]:
-        return list(
-            chain.from_iterable(
-                [convert.payment(order) for order in self.orders_refined]
-            )
-        )
+        return [
+            payment
+            for order in self.orders_refined
+            for payment in convert.payment(order)
+        ]
 
     def savej(self, fname: str = "orders.json") -> None:
         ioh.savej(self._data_path / fname, self.orders_raw)

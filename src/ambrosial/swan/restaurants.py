@@ -1,5 +1,4 @@
 from collections import Counter, defaultdict
-from itertools import chain
 from typing import Any, Optional
 
 from ambrosial.swiggy import Swiggy
@@ -41,11 +40,9 @@ class RestaurantAnalytics:
     def cuisines(self) -> dict[str, int]:
         return dict(
             Counter(
-                list(
-                    chain.from_iterable(
-                        restaurant.cuisine for restaurant in set(self.all_restaurants)
-                    )
-                )
+                cuisine
+                for restaurant in set(self.all_restaurants)
+                for cuisine in restaurant.cuisine
             ).most_common()
         )
 

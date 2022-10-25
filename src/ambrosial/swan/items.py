@@ -1,5 +1,4 @@
 from collections import Counter, defaultdict
-from itertools import chain
 from typing import Any, Optional
 
 import ambrosial.swan.typealiases as alias
@@ -111,16 +110,12 @@ class ItemAnalytics:
 
     def _get_addons_detail(self) -> list[tuple[Any, int]]:
         return Counter(
-            i["name"]
-            for i in list(chain.from_iterable([item.addons for item in self.all_items]))
+            addon["name"] for item in self.all_items for addon in item.addons
         ).most_common()
 
     def _get_variants_detail(self) -> list[tuple[Any, int]]:
         return Counter(
-            i["name"]
-            for i in list(
-                chain.from_iterable([item.variants for item in self.all_items])
-            )
+            variant["name"] for item in self.all_items for variant in item.variants
         ).most_common()
 
     def _get_category_details(self) -> list[tuple[str, int]]:
