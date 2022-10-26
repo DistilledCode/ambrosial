@@ -41,15 +41,15 @@ class ItemAnalytics:
     def history(
         self,
         item_id: Optional[int] = None,
-    ) -> dict[int, list[alias.History]]:
+    ) -> dict[int, list[alias.ItemHistory]]:
         if item_id is not None and self._is_valid_id(item_id):
             item_map = {item_id: self.items_map[item_id]}
         else:
             item_map = self.items_map
         return {
             item_id: [
-                alias.History(
-                    order_id=item.order_id,
+                alias.ItemHistory(
+                    item=item,
                     address_id=self.swiggy.get_order(item.order_id).address.address_id,
                     order_time=self.swiggy.get_order(item.order_id).order_time,
                 )

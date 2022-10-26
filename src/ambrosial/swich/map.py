@@ -19,6 +19,7 @@ class Map:
         self.ndist = NormalDist(mu=0, sigma=0.00015)
         self.popup_frmt = (
             "<center><b>{name}, {area_name}<br>"
+            "{customer_distance[1]} kms from {customer_distance[0]}<br>"
             "Value: {value}/{total}<br>"
             "<a href='{cover_image}'>Cover Image</a></b></center>"
         )
@@ -146,8 +147,8 @@ class Map:
             )
             cluster_marker.add_to(cluster_layer)
             individual_marker.add_to(individual_layer)
-        folium.TileLayer("cartodbpositron").add_to(base_map)
         folium.TileLayer("OpenStreetMap").add_to(base_map)
+        folium.TileLayer("stamenwatercolor").add_to(base_map)
         individual_layer.add_to(base_map)
         cluster_layer.add_to(base_map)
         HeatMap(weighted_coords, name="Heatmap", blur=5, radius=20).add_to(base_map)

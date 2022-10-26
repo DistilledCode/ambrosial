@@ -153,10 +153,15 @@ class OrderAnalytics:
         self,
         orders: list[Order],
     ) -> alias.SuperBenefits:
+        super_orders = [
+            order
+            for order in orders
+            if any("super" in tag.lower() for tag in order.order_tags)
+        ]
         free_deliveries = 0
         other_benefits: float = 0.0
         fd_break_up: Counter = Counter()
-        for order in orders:
+        for order in super_orders:
             free_deliveries += order.free_delivery_discount_hit
             other_benefits += order.trade_discount
             fd_break_up += Counter(order.free_del_break_up)
