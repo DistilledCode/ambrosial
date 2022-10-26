@@ -12,7 +12,7 @@ from ambrosial.swiggy.datamodel.address import Address
 from ambrosial.swiggy.datamodel.item import Item
 from ambrosial.swiggy.datamodel.order import Offer, Order, Payment
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
-from ambrosial.swiggy.helper import find_order
+from ambrosial.swiggy.helper import Cache
 from ambrosial.swiggy.utils import SwiggyOrderDict
 
 
@@ -65,71 +65,69 @@ class Swiggy:
             self.orders_raw.extend(self._parse_orders())
         print(f"Retrieved {len(self.orders_raw):>4} orders")
         self.orders_refined = self._get_processed_order()
+        self.post_fetch()
+
+    def post_fetch(self) -> None:
         self._fetched = True
+        self.cache: Cache = Cache(self.orders_refined)
 
     def fetchall(self) -> None:
+        """Fetch both order details & account info.
+
+        Same as calling ``fetch_orders()`` and ``get_account_info()``.
+        """
         self.fetch_orders()
         self.get_account_info()
 
-    def get_order(self, id_: int) -> Order:
-        return convert.order(
-            find_order(
-                "order",
-                self.orders_refined,
-                id_,
-            ),
-            self.ddav,
-        )
+    def get_order(self, order_id: int) -> Order:
+        return convert.order(self.cache.get_order(order_id=order_id), self.ddav)
 
     def get_orders(self) -> list[Order]:
         return [convert.order(order, self.ddav) for order in self.orders_refined]
 
-    def get_item(self, id_: int) -> list[Item]:
-        return convert.item(find_order("item", self.orders_refined, id_))
+    def get_item(self, item_id: str) -> list[Item]:
+        return convert.item(self.cache.get_item(item_id=str(item_id)))
 
     def get_items(self) -> list[Item]:
         return [item for order in self.orders_refined for item in convert.item(order)]
 
-    def get_restaurant(self, id_: int) -> Restaurant:
+    def get_restaurant(self, rest_id: str) -> Restaurant:
         return convert.restaurant(
-            find_order(
-                "restaurant",
-                self.orders_refined,
-                id_,
-            ),
+            self.cache.get_restaurant(restaurant_id=str(rest_id)),
             self.ddav,
         )
 
     def get_restaurants(self) -> list[Restaurant]:
         return [convert.restaurant(order, self.ddav) for order in self.orders_refined]
 
-    def get_address(self, id_: int, ver: Optional[int] = None) -> Address:
-        if ver is not None and self.ddav is False:
+    def get_address(self, address_id: str, ver: Optional[int] = None) -> Address:
+        if self.ddav is False and ver is not None:
             warn(f"version number will be ignored as {self.ddav=}")
-        if ver is None and self.ddav is True:
+            order = self.cache.get_address(address_id=str(address_id))
+        if self.ddav is True and ver is None:
             raise KeyError(f"provide version number of address as {self.ddav=}")
-        order_ = find_order(
-            "address",
-            self.orders_refined,
-            id_,
-            ver=ver,
-            ddav=self.ddav,
-        )
-        return convert.address(order_, self.ddav)
+        if self.ddav is True and ver is not None:
+            order = self.cache.get_address_w_ver(
+                address_id=str(address_id),
+                ver=int(ver),
+            )
+        return convert.address(order, self.ddav)
 
     def get_addresses(self) -> list[Address]:
         return [convert.address(order, self.ddav) for order in self.orders_refined]
 
-    def get_offer(self, id_: int) -> list[Offer]:
-        return convert.offer(find_order("offer", self.orders_refined, id_))
+    def get_offer(self, order_id: int) -> list[Offer]:
+        return convert.offer(self.cache.get_offer(order_id=int(order_id)))
 
     def get_offers(self) -> list[Offer]:
         return [
             offer for order in self.orders_refined for offer in convert.offer(order)
         ]
 
-    def get_payment(self, id_: int) -> list[Payment]:
-        return convert.payment(find_order("payment", self.orders_refined, id_))
+    def get_payment(self, transaction_id: str) -> list[Payment]:
+        return convert.payment(
+            self.cache.get_payment(transaction_id=str(transaction_id))
+        )
 
     def get_payments(self) -> list[Payment]:
         return [
@@ -147,12 +145,12 @@ class Swiggy:
     def loadj(self, fname: str = "orders.json") -> None:
         self.orders_raw = ioh.loadj(self._data_path / fname)
         self.orders_refined = self._get_processed_order()
-        self._fetched = True
+        self.post_fetch()
 
     def loadb(self, fname: str = "orders.msgpack") -> None:
         self.orders_raw = ioh.loadb(self._data_path / fname)
         self.orders_refined = self._get_processed_order()
-        self._fetched = True
+        self.post_fetch()
 
     def _send_req(self, order_id: Optional[int] = None) -> None:
         param = {} if order_id is None else {"order_id": order_id}

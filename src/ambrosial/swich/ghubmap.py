@@ -174,7 +174,7 @@ class GitHubMap:
         if len(actual_values) < threshold:
             return None
         jargs = helper.july_heatmap_args(kwargs)
-        restaurant = self.swan.swiggy.get_restaurant(id_=item.restaurant_id)
+        restaurant = self.swan.swiggy.get_restaurant(rest_id=str(item.restaurant_id))
         title += f" {item.name} ({item.item_id})"
         title += f"\nRestaurant: {restaurant.name}, {restaurant.area_name}"
         title += f"\nTotal: {sum(actual_values)}"
