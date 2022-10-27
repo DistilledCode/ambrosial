@@ -135,8 +135,17 @@ def _get_drange_from_str(
 def _get_drange_from_orders(
     orders: list[Order],
 ) -> list[date]:
-    min_date = min(orders, key=lambda x: x.order_time).order_time.date()
-    max_date = max(orders, key=lambda x: x.order_time).order_time.date()
+    min_time = min(orders, key=lambda x: x.order_time).order_time
+    max_time = max(orders, key=lambda x: x.order_time).order_time
+    return _get_drange_from_datetime(min_time, max_time)
+
+
+def _get_drange_from_datetime(
+    min_time: datetime,
+    max_time: datetime,
+) -> list[date]:
+    min_date = min_time.date()
+    max_date = max_time.date()
     month_diff = (max_date.month - min_date.month) + (
         12 if min_date.month > max_date.month else 0
     )
@@ -152,7 +161,7 @@ def _get_drange_from_orders(
 def extreme_value_str(dates: list[date], values: list[int]) -> str:
     actual_min = heapq.nsmallest(2, set(values))[-1]
     actual_max, max_date = max(zip(values, dates), key=lambda x: x[0])
-    min_date = None
+    # min_date = None
     for day, val in zip(dates, values):
         if val == actual_min:
             min_date = day
