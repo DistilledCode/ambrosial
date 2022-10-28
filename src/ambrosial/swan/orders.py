@@ -1,5 +1,7 @@
 import statistics as st
 from collections import Counter, defaultdict
+from copy import copy
+from datetime import datetime
 from itertools import groupby
 from typing import Any, NoReturn, Optional
 
@@ -13,6 +15,16 @@ class OrderAnalytics:
     def __init__(self, swiggy: Swiggy) -> None:
         self.swiggy = swiggy
         self.all_orders: list[Order] = self.swiggy.get_orders()
+        self.strftime_mapping = {
+            "hour": "%H",
+            "day": "%d",
+            "week": "%w",
+            "week_": "%A",
+            "calweek": "%U",
+            "month": "%m",
+            "month_": "%B",
+            "year": "%Y",
+        }
 
     def group(self) -> NoReturn:
         raise NotImplementedError("Each order is unique. Use Swiggy.get_orders()")
@@ -32,28 +44,18 @@ class OrderAnalytics:
                 group_dict[getattr(order, key)].append(order)
         return dict(group_dict)
 
-    def _packed_instances(self, key: str, attr: Optional[str]) -> dict[Any, Any]:
-        group_dict = defaultdict(list)
-        for order in self.all_orders:
-            for unpacked in getattr(order, key):
-                if attr is not None:
-                    group_dict[unpacked].append(getattr(order, attr))
-                else:
-                    group_dict[unpacked].append(order)
-        return dict(group_dict)
-
     def tseries_amount(self, bins: str = "year+month_") -> dict[str, int]:
         crb = self._chronologically_binned(bins)
         return {
             " ".join(str(i) for i in key): sum(order.order_total for order in list(val))
-            for key, val in groupby(crb, lambda x: self._cmp(x, bins))
+            for key, val in groupby(crb, lambda x: self._cmp(x.order_time, bins))
         }
 
-    def tseries_orders(self, bins: str = "year+month_") -> dict[str, int]:
+    def tseries_count(self, bins: str = "year+month_") -> dict[str, int]:
         crb = self._chronologically_binned(bins)
         return {
             " ".join(str(i) for i in key): len(list(val))
-            for key, val in groupby(crb, lambda x: self._cmp(x, bins))
+            for key, val in groupby(crb, lambda x: self._cmp(x.order_time, bins))
         }
 
     def tseries_charges(
@@ -71,7 +73,7 @@ class OrderAnalytics:
                     Counter(),
                 )
             )
-            for key, orders in groupby(crb, lambda x: self._cmp(x, bins))
+            for key, orders in groupby(crb, lambda x: self._cmp(x.order_time, bins))
         }
 
     def tseries_del_time(
@@ -82,7 +84,7 @@ class OrderAnalytics:
         conv = {"minute": 60, "hour": 3600}.get(unit, 1)
         crb = self._chronologically_binned(bins)
         deltime_dict = {}
-        for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
+        for key, orders in groupby(crb, lambda x: self._cmp(x.order_time, bins)):
             orders_ = [order for order in orders if order.mCancellationTime == 0]
             if len(orders_) == 0:
                 continue
@@ -120,13 +122,13 @@ class OrderAnalytics:
         crb = self._chronologically_binned(bins)
         return {
             " ".join(str(i) for i in key): self._get_ordpunct_details(list(orders))
-            for key, orders in groupby(crb, lambda x: self._cmp(x, bins))
+            for key, orders in groupby(crb, lambda x: self._cmp(x.order_time, bins))
         }
 
     def tseries_distance(self, bins: str = "year+month_") -> dict[str, alias.Distance]:
         crb = self._chronologically_binned(bins)
         distance_dict = {}
-        for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
+        for key, orders in groupby(crb, lambda x: self._cmp(x.order_time, bins)):
             orders_ = [order for order in orders if order.mCancellationTime == 0]
             if len(orders_) == 0:
                 continue
@@ -146,7 +148,7 @@ class OrderAnalytics:
         crb = self._chronologically_binned(bins)
         return {
             " ".join(str(i) for i in key): self._get_super_benefits_detail(list(orders))
-            for key, orders in groupby(crb, lambda x: self._cmp(x, bins))
+            for key, orders in groupby(crb, lambda x: self._cmp(x.order_time, bins))
         }
 
     def _get_super_benefits_detail(
@@ -181,7 +183,7 @@ class OrderAnalytics:
     ) -> dict[str, alias.FurthestOrder]:
         crb = self._chronologically_binned(bins)
         furthest_dict = {}
-        for key, orders in groupby(crb, lambda x: self._cmp(x, bins)):
+        for key, orders in groupby(crb, lambda x: self._cmp(x.order_time, bins)):
             furthest = max(orders, key=lambda x: x.restaurant.customer_distance[1])
             f_rest = furthest.restaurant
             furthest_dict[" ".join(str(i) for i in key)] = alias.FurthestOrder(
@@ -195,7 +197,10 @@ class OrderAnalytics:
         return furthest_dict
 
     def _chronologically_binned(self, bins: str) -> list[Order]:
-        return sorted(self.all_orders, key=lambda x: self._cmp(x, bins, chrono=True))
+        return sorted(
+            self.all_orders,
+            key=lambda x: self._cmp(x.order_time, bins, chrono=True),
+        )
 
     def _get_ordpunct_details(self, orders: list[Order]) -> alias.Punctuality:
         """all instances of `Order` in `orders` were cancelled if:
@@ -221,28 +226,31 @@ class OrderAnalytics:
             min_delivery_time=min_time,
         )
 
-    def _cmp(self, order: Order, bins: str, chrono: bool = False) -> tuple:
+    def _cmp(self, order_time: datetime, bins: str, chrono: bool = False) -> tuple:
+        if chrono:
+            # else keys will be sorted in alphabetical order instead of chronological
+            strf_mapping = copy(self.strftime_mapping)
+            strf_mapping["month_"] = strf_mapping["month"]
+            strf_mapping["week_"] = strf_mapping["week"]
+        else:
+            strf_mapping = self.strftime_mapping
         bin_ = [attr for attr in bins.split("+") if attr]
         # cannot use set() as it doesnot preserve order
         bin_ = list(dict.fromkeys(bin_))
-        attr_mapping = {
-            "hour": order.order_time.strftime("%H"),
-            "day": order.order_time.strftime("%d"),
-            "week": order.order_time.isoweekday(),
-            "week_": order.order_time.strftime("%A"),
-            "calweek": order.order_time.strftime("%U"),
-            "month": order.order_time.strftime("%m"),
-            "month_": order.order_time.strftime("%B"),
-            "year": order.order_time.year,
-        }
-        if any((x := attr) not in attr_mapping for attr in bin_):
+        if any((x := attr) not in strf_mapping for attr in bin_):
             raise KeyError(
                 f"Invalid grouping key: {repr(x)}. "
-                f"Available keys: {repr(list(attr_mapping))}"
+                f"Available keys: {repr(list(strf_mapping))}"
             )
-        if chrono:
-            # else keys will be sorted in alphabetical order instead of chronological
-            attr_mapping["month_"] = attr_mapping["month"]
-            attr_mapping["week_"] = attr_mapping["week"]
 
-        return tuple(attr_mapping.get(attr) for attr in bin_)
+        return tuple(order_time.strftime(strf_mapping[attr]) for attr in bin_)
+
+    def _packed_instances(self, key: str, attr: Optional[str]) -> dict[Any, Any]:
+        group_dict = defaultdict(list)
+        for order in self.all_orders:
+            for unpacked in getattr(order, key):
+                if attr is not None:
+                    group_dict[unpacked].append(getattr(order, attr))
+                else:
+                    group_dict[unpacked].append(order)
+        return dict(group_dict)

@@ -41,7 +41,7 @@ class HeatMap:
         **hm_kwargs: Any,
     ) -> Axes:
         bin_ = self._get_bin_list(bins)
-        data = self.swan.orders.tseries_orders(bins)
+        data = self.swan.orders.tseries_count(bins)
 
         return self._make_heatmap(
             data=data,

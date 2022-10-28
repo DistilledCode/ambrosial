@@ -117,7 +117,7 @@ def _get_order_count(
     swan: SwiggyAnalytics,
     bins: str,
 ) -> tuple[list[date], list[int]]:
-    value_dict = swan.orders.tseries_orders(bins)
+    value_dict = swan.orders.tseries_count(bins)
     date_range_ = _get_drange_from_str(value_dict)
     values = [value_dict.get(str(date_).replace("-", " "), 0) for date_ in date_range_]
     return date_range_, values
