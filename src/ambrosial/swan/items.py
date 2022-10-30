@@ -1,10 +1,11 @@
 from collections import Counter, defaultdict
 from itertools import groupby
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import ambrosial.swan.typealiases as alias
 from ambrosial.swiggy import Swiggy
 from ambrosial.swiggy.datamodel.item import Item
+from ambrosial.swiggy.datamodel.order import Order
 
 
 class ItemAnalytics:
@@ -38,25 +39,12 @@ class ItemAnalytics:
                 g_dict[getattr(item, key)].append(getattr(item, attr))
         return dict(g_dict)
 
-    def history(
-        self,
-        item_id: Optional[int] = None,
-    ) -> dict[int, list[alias.ItemHistory]]:
-        if item_id is not None and self._is_valid_id(item_id):
-            item_map = {item_id: self.items_map[item_id]}
-        else:
-            item_map = self.items_map
-        return {
-            item_id: [
-                alias.ItemHistory(
-                    item=item,
-                    order_time=(o_ := self.swiggy.get_order(item.order_id)).order_time,
-                    address_id=o_.address.address_id,
-                )
-                for item in items
-            ]
-            for item_id, items in item_map.items()
-        }
+    def associated_orders(self, item_id: int) -> list[Order]:
+        self._is_valid_id(item_id)
+        return [
+            self.swiggy.get_order(order_id=order_id)
+            for order_id in self.swiggy.cache.items[str(item_id)]
+        ]
 
     def summarise(self, item_id: int) -> alias.Summarise:
         """
@@ -99,7 +87,7 @@ class ItemAnalytics:
             ]
         return [item for item in self.all_items if name.lower() in item.name.lower()]
 
-    def _is_valid_id(self, item_id: int) -> bool:
+    def _is_valid_id(self, item_id: int) -> Literal[True]:
         if item_id in self.items_map:
             return True
         raise ValueError(f"item with id = {repr(item_id)} does not exist.")

@@ -3,8 +3,11 @@ from typing import Literal, TypedDict, Union
 
 from pydantic import HttpUrl
 
-from ambrosial.swiggy.datamodel.item import Item
+# from ambrosial.swiggy.datamodel.item import Item
+# from ambrosial.swiggy.datamodel.order import Order
 from ambrosial.swiggy.datamodel.typealiases import OfferTypeHint, OrderTypeHint
+
+# from ambrosial.swiggy.datamodel.address import Address
 
 
 class Coordindates(TypedDict):
@@ -28,10 +31,10 @@ class DeliveryTimeStats(TypedDict):
     total_deliveries: int
 
 
-class ItemHistory(TypedDict):
-    item: Item
-    address_id: int
-    order_time: datetime
+# class ItemHistory(TypedDict):
+#     item: Item
+#     order: Order
+#     address: Address
 
 
 class Summarise(TypedDict):
