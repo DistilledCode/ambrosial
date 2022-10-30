@@ -2,6 +2,7 @@ from collections import Counter, defaultdict
 from typing import Any, Optional
 
 from ambrosial.swiggy import Swiggy
+from ambrosial.swiggy.datamodel.order import Order
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
 
 
@@ -27,6 +28,12 @@ class RestaurantAnalytics:
                 getattr(restaurant, group_by) for restaurant in self.all_restaurants
             ).most_common()
         )
+
+    def associated_orders(self, restaurant_id: int) -> list[Order]:
+        return [
+            self.swiggy.get_order(order_id=order_id)
+            for order_id in self.swiggy.cache.resturants[str(restaurant_id)]
+        ]
 
     def grouped_instances(self, key: str, attr: Optional[str] = None) -> dict[Any, Any]:
         group_dict = defaultdict(list)
