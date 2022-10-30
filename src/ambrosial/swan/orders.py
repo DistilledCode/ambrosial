@@ -29,8 +29,10 @@ class OrderAnalytics:
     def group(self) -> NoReturn:
         raise NotImplementedError("Each order is unique. Use Swiggy.get_orders()")
 
-    def group_by(self, attr: str) -> dict[Any, int]:
-        return dict(Counter(getattr(i, attr) for i in self.all_orders).most_common())
+    def grouped_count(self, group_by: str) -> dict[Any, int]:
+        return dict(
+            Counter(getattr(i, group_by) for i in self.all_orders).most_common()
+        )
 
     def grouped_instances(self, key: str, attr: Optional[str] = None) -> dict[Any, Any]:
         special = ("items", "offers_data", "payment_transaction")

@@ -65,11 +65,7 @@ class Swiggy:
             self.orders_raw.extend(self._parse_orders())
         print(f"Retrieved {len(self.orders_raw):>4} orders")
         self.orders_refined = self._get_processed_order()
-        self.post_fetch()
-
-    def post_fetch(self) -> None:
-        self._fetched = True
-        self.cache: Cache = Cache(self.orders_refined)
+        self._post_fetch()
 
     def fetchall(self) -> None:
         """Fetch both order details & account info.
@@ -145,12 +141,12 @@ class Swiggy:
     def loadj(self, fname: str = "orders.json") -> None:
         self.orders_raw = ioh.loadj(self._data_path / fname)
         self.orders_refined = self._get_processed_order()
-        self.post_fetch()
+        self._post_fetch()
 
     def loadb(self, fname: str = "orders.msgpack") -> None:
         self.orders_raw = ioh.loadb(self._data_path / fname)
         self.orders_refined = self._get_processed_order()
-        self.post_fetch()
+        self._post_fetch()
 
     def _send_req(self, order_id: Optional[int] = None) -> None:
         param = {} if order_id is None else {"order_id": order_id}
@@ -163,6 +159,10 @@ class Swiggy:
     def _parse_orders(self) -> list[SwiggyOrderDict]:
         utils.validate_response(self._response)
         return self._response.json()["data"]["orders"]
+
+    def _post_fetch(self) -> None:
+        self._fetched = True
+        self.cache: Cache = Cache(self.orders_refined)
 
     def __repr__(self) -> str:
         return f"Swiggy(ddav = {self.ddav})"

@@ -16,18 +16,18 @@ class ItemAnalytics:
     def group(self) -> dict[Item, int]:
         return dict(Counter(self.all_items).most_common())
 
-    def group_by(self, attr: str) -> dict[Any, int]:
-        if attr == "item_charges":
+    def grouped_count(self, group_by: str) -> dict[Any, int]:
+        if group_by == "item_charges":
             raise NotImplementedError("unhashable type: 'dict'")
-        obj_dict = {
+        special_attrs = {
             "addons": self._get_addons_detail,
             "variants": self._get_variants_detail,
             "category_details": self._get_category_details,
         }
 
-        if attr in obj_dict:
-            return dict(obj_dict[attr]())
-        return dict(self._get_attr_detail(attr))
+        if group_by in special_attrs:
+            return dict(special_attrs[group_by]())
+        return dict(self._get_attr_detail(group_by))
 
     def grouped_instances(self, key: str, attr: Optional[str] = None) -> dict[Any, Any]:
         g_dict = defaultdict(list)
@@ -50,8 +50,8 @@ class ItemAnalytics:
             item_id: [
                 alias.ItemHistory(
                     item=item,
-                    address_id=self.swiggy.get_order(item.order_id).address.address_id,
-                    order_time=self.swiggy.get_order(item.order_id).order_time,
+                    order_time=(o_ := self.swiggy.get_order(item.order_id)).order_time,
+                    address_id=o_.address.address_id,
                 )
                 for item in items
             ]
@@ -97,10 +97,7 @@ class ItemAnalytics:
             return [
                 item for item in self.all_items if name.lower() == item.name.lower()
             ]
-        else:
-            return [
-                item for item in self.all_items if name.lower() in item.name.lower()
-            ]
+        return [item for item in self.all_items if name.lower() in item.name.lower()]
 
     def _is_valid_id(self, item_id: int) -> bool:
         if item_id in self.items_map:
@@ -111,6 +108,7 @@ class ItemAnalytics:
         return Counter(getattr(item, attr) for item in self.all_items).most_common()
 
     def _get_addons_detail(self) -> list[tuple[Any, int]]:
+        # 2x faster than chain.from_iteratable {itertools} & flatten {more_itertools}
         return Counter(
             addon["name"] for item in self.all_items for addon in item.addons
         ).most_common()

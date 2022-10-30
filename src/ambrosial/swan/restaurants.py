@@ -17,14 +17,14 @@ class RestaurantAnalytics:
     def group(self) -> dict[Restaurant, int]:
         return dict(Counter(self.all_restaurants).most_common())
 
-    def group_by(self, attr: str) -> dict[str, int]:
-        if attr == "cuisine":
+    def grouped_count(self, group_by: str) -> dict[str, int]:
+        if group_by == "cuisine":
             raise NotImplementedError("use .cuisines() instead.")
-        if attr == "coordinates":
-            raise TypeError(f"Unhashable attribute of Restaurant: {repr(attr)}")
+        if group_by == "coordinates":
+            raise TypeError(f"Unhashable attribute of Restaurant: {repr(group_by)}")
         return dict(
             Counter(
-                getattr(restaurant, attr) for restaurant in self.all_restaurants
+                getattr(restaurant, group_by) for restaurant in self.all_restaurants
             ).most_common()
         )
 

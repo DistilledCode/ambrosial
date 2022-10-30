@@ -17,8 +17,10 @@ class AddressAnalytics:
     def group(self) -> dict[Address, int]:
         return dict(Counter(self.all_addresses).most_common())
 
-    def group_by(self, attr: str) -> dict[str, int]:
-        return dict(Counter(getattr(i, attr) for i in self.all_addresses).most_common())
+    def grouped_count(self, group_by: str) -> dict[str, int]:
+        return dict(
+            Counter(getattr(i, group_by) for i in self.all_addresses).most_common()
+        )
 
     def grouped_instances(self, key: str, attr: Optional[str] = None) -> dict[Any, Any]:
         group_dict = defaultdict(list)

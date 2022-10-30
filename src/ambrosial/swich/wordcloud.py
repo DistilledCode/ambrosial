@@ -22,7 +22,7 @@ class WordCloud:
         freq_weight: bool = False,
         **kwargs: Any,
     ) -> None:
-        data = self.swan.items.group_by("category_details")
+        data = self.swan.items.grouped_count("category_details")
         self._make_wc(
             data=data,
             path=path,
@@ -38,7 +38,7 @@ class WordCloud:
         freq_weight: bool = True,
         **kwargs: Any,
     ) -> None:
-        data = self.swan.items.group_by("name")
+        data = self.swan.items.grouped_count("name")
         self._make_wc(
             data=data,
             path=path,
@@ -70,7 +70,7 @@ class WordCloud:
         freq_weight: bool = True,
         **kwargs: Any,
     ) -> None:
-        data = self.swan.restaurants.group_by("name")
+        data = self.swan.restaurants.grouped_count("name")
         self._make_wc(
             data=data,
             path=path,
@@ -86,7 +86,7 @@ class WordCloud:
         freq_weight: bool = True,
         **kwargs: Any,
     ) -> None:
-        data = self.swan.offers.group_by("coupon_applied")
+        data = self.swan.offers.grouped_count("coupon_applied")
         self._make_wc(
             data=data,
             path=path,

@@ -16,12 +16,14 @@ class OfferAnalytics:
     def group(self) -> NoReturn:
         raise NotImplementedError("Each offer is unique. Use Swiggy.get_offers()")
 
-    def group_by(self, attr: str) -> dict[str, int]:
-        if attr not in list(Offer.__annotations__):
-            raise TypeError(f"type object 'Offer' has no attribute {repr(attr)}")
-        if attr == "discount_share":
+    def grouped_count(self, group_by: str) -> dict[str, int]:
+        if group_by not in list(Offer.__annotations__):
+            raise TypeError(f"type object 'Offer' has no attribute {repr(group_by)}")
+        if group_by == "discount_share":
             raise NotImplementedError("use .statistics() instead")
-        return dict(Counter(getattr(i, attr) for i in self.all_offers).most_common())
+        return dict(
+            Counter(getattr(i, group_by) for i in self.all_offers).most_common()
+        )
 
     def grouped_instances(self, key: str, attr: Optional[str] = None) -> dict[Any, Any]:
         group_dict = defaultdict(list)
