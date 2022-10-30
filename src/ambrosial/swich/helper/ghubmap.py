@@ -1,7 +1,7 @@
 import heapq
 from collections import defaultdict
 from datetime import date, datetime, timedelta
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from july.utils import date_range
 
@@ -9,6 +9,15 @@ from ambrosial.swan import SwiggyAnalytics
 from ambrosial.swiggy.datamodel.item import Item
 from ambrosial.swiggy.datamodel.order import Order
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
+
+# def timeit(func):
+#     def wrapper_func(*args, **kwargs):
+#         st = perf_counter()
+#         result = func(*args, **kwargs)
+#         print(perf_counter() - st)
+#         return result
+
+#     return wrapper_func
 
 
 def july_heatmap_args(kwargs: dict[str, Any]) -> dict[str, Any]:
@@ -23,7 +32,7 @@ def july_heatmap_args(kwargs: dict[str, Any]) -> dict[str, Any]:
     return {**kwargs, **july_args}
 
 
-def get_offer_info(swan: SwiggyAnalytics) -> tuple[list[date], list[int]]:
+def offer_plot_value(swan: SwiggyAnalytics) -> tuple[list[date], list[int]]:
     value_dict: dict[date, int] = defaultdict(int)
     orders = swan.swiggy.get_orders()
     for order in orders:
@@ -34,7 +43,16 @@ def get_offer_info(swan: SwiggyAnalytics) -> tuple[list[date], list[int]]:
     return drange, values
 
 
-def get_restaurant_info(
+def get_grouped_restaurant(
+    swan: SwiggyAnalytics,
+    restaurant_id: int,
+) -> tuple[Restaurant, list[Order]]:
+    restaurant = swan.swiggy.get_restaurant(restaurant_id=restaurant_id)
+    orders = swan.restaurants.associated_orders(restaurant_id=restaurant_id)
+    return restaurant, orders
+
+
+def restaurant_plot_value(
     code: Literal["count", "amount"],
     orders: list[Order],
 ) -> tuple[list[date], list[int]]:
@@ -49,39 +67,24 @@ def get_restaurant_info(
     return drange, values
 
 
-def get_grouped_restaurant(
-    swan: SwiggyAnalytics,
-    restaurant_id: int,
-) -> tuple[Restaurant, list[Order]]:
-    for restaurant, orders in swan.orders.grouped_instances(key="restaurant").items():
-        if restaurant.rest_id == restaurant_id:
-            return restaurant, orders
-    raise ValueError(f"No restauarant with id {repr(restaurant_id)} found")
-
-
 def get_grouped_item(
     swan: SwiggyAnalytics,
     item_id: int,
 ) -> tuple[Item, list[Order]]:
-    for item, orders in swan.orders.grouped_instances(key="items").items():
-        if item.item_id == item_id:
-            return item, orders
-    raise ValueError(f"No item with id {repr(item_id)} found")
+    item = swan.swiggy.get_item(item_id=item_id)
+    orders = swan.items.associated_orders(item_id=item_id)
+    return item, orders
 
 
-def get_item_info(
+def item_plot_value(
     code: Literal["count", "amount"],
-    item: Item,
     orders: list[Order],
 ) -> tuple[list[date], list[int]]:
     value_dict: dict[date, int] = defaultdict(int)
-    isntances: list[tuple[Item, datetime]] = [
-        (item_, order.order_time)
-        for order in orders
-        for item_ in order.items
-        if item_.item_id == item.item_id
+    instances: list[tuple[Item, datetime]] = [
+        (item, order.order_time) for order in orders for item in order.items
     ]
-    for item, order_time in isntances:
+    for item, order_time in instances:
         if code == "count":
             value_dict[order_time.date()] += item.quantity
         else:
@@ -96,40 +99,16 @@ def get_order_info(
     swan: SwiggyAnalytics,
     bins: str,
 ) -> tuple[list[date], list[int]]:
-    func_dict: dict[str, Callable[..., tuple[list[date], list[int]]]] = {
-        "oa": _get_order_amount,
-        "on": _get_order_count,
-    }
-    return func_dict[code](swan, bins)
-
-
-def _get_order_amount(
-    swan: SwiggyAnalytics,
-    bins: str,
-) -> tuple[list[date], list[int]]:
-    value_dict = swan.orders.tseries_amount(bins)
-    date_range_ = _get_drange_from_str(value_dict)
-    values = [value_dict.get(str(date_).replace("-", " "), 0) for date_ in date_range_]
-    return date_range_, values
-
-
-def _get_order_count(
-    swan: SwiggyAnalytics,
-    bins: str,
-) -> tuple[list[date], list[int]]:
-    value_dict = swan.orders.tseries_count(bins)
-    date_range_ = _get_drange_from_str(value_dict)
-    values = [value_dict.get(str(date_).replace("-", " "), 0) for date_ in date_range_]
-    return date_range_, values
-
-
-def _get_drange_from_str(
-    value_dict: dict[str, Any],
-) -> list[date]:
-    return date_range(
+    if code == "oa":
+        value_dict = swan.orders.tseries_amount(bins)
+    else:
+        value_dict = swan.orders.tseries_count(bins)
+    date_range_ = date_range(
         min(value_dict).replace(" ", "-"),
         max(value_dict).replace(" ", "-"),
     )
+    values = [value_dict.get(str(date_).replace("-", " "), 0) for date_ in date_range_]
+    return date_range_, values
 
 
 def _get_drange_from_orders(
@@ -161,7 +140,6 @@ def _get_drange_from_datetime(
 def extreme_value_str(dates: list[date], values: list[int]) -> str:
     actual_min = heapq.nsmallest(2, set(values))[-1]
     actual_max, max_date = max(zip(values, dates), key=lambda x: x[0])
-    # min_date = None
     for day, val in zip(dates, values):
         if val == actual_min:
             min_date = day

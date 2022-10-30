@@ -81,22 +81,29 @@ class Swiggy:
     def get_orders(self) -> list[Order]:
         return [convert.order(order, self.ddav) for order in self.orders_refined]
 
-    def get_item(self, item_id: str) -> list[Item]:
-        return convert.item(self.cache.get_item(item_id=str(item_id)))
+    def get_item(self, item_id: int) -> Item:
+        # convert.item() returns all the order items of the first order that contains
+        # an item having `item_id`. If not, cache.get_item() raised ValueError.
+        # Thus, the comprehension is guaranteed to contain an Item with given item_id.
+        return [
+            item
+            for item in convert.item(self.cache.get_item(item_id=str(item_id)))
+            if item.item_id == item_id
+        ][0]
 
     def get_items(self) -> list[Item]:
         return [item for order in self.orders_refined for item in convert.item(order)]
 
-    def get_restaurant(self, rest_id: str) -> Restaurant:
+    def get_restaurant(self, restaurant_id: int) -> Restaurant:
         return convert.restaurant(
-            self.cache.get_restaurant(restaurant_id=str(rest_id)),
+            self.cache.get_restaurant(restaurant_id=str(restaurant_id)),
             self.ddav,
         )
 
     def get_restaurants(self) -> list[Restaurant]:
         return [convert.restaurant(order, self.ddav) for order in self.orders_refined]
 
-    def get_address(self, address_id: str, ver: Optional[int] = None) -> Address:
+    def get_address(self, address_id: int, ver: Optional[int] = None) -> Address:
         if self.ddav is False and ver is not None:
             warn(f"version number will be ignored as {self.ddav=}")
             order = self.cache.get_address(address_id=str(address_id))
@@ -120,7 +127,7 @@ class Swiggy:
             offer for order in self.orders_refined for offer in convert.offer(order)
         ]
 
-    def get_payment(self, transaction_id: str) -> list[Payment]:
+    def get_payment(self, transaction_id: int) -> list[Payment]:
         return convert.payment(
             self.cache.get_payment(transaction_id=str(transaction_id))
         )

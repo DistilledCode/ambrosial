@@ -36,8 +36,10 @@ class GitHubMap:
             kwargs=kwargs,
         )
 
+    # TODO: Super Benefits & Total Savings (Offer Discount + Super Benefits)
+    # TODO: Total Savings stats in swan also
     def offer_discount(self, **kwargs: Any) -> Axes:
-        date_range_, values = helper.get_offer_info(self.swan)
+        date_range_, values = helper.offer_plot_value(self.swan)
         jargs = helper.july_heatmap_args(kwargs)
         title = (
             f"Total Discount Availed: {sum(values)}\n"
@@ -141,7 +143,7 @@ class GitHubMap:
     ) -> Optional[Axes]:
         restaurant_id, threshold = graph_info
         restaurant, orders = helper.get_grouped_restaurant(self.swan, restaurant_id)
-        date_range_, values = helper.get_restaurant_info(code, orders)
+        date_range_, values = helper.restaurant_plot_value(code, orders)
         actual_values = [value for value in values if value > 0]
         if len(actual_values) < threshold:
             return None
@@ -169,12 +171,12 @@ class GitHubMap:
     ) -> Optional[Axes]:
         item_id, threshold = graph_info
         item, orders = helper.get_grouped_item(self.swan, item_id)
-        date_range_, values = helper.get_item_info(code, item, orders)
+        date_range_, values = helper.item_plot_value(code, orders)
         actual_values = [value for value in values if value > 0]
         if len(actual_values) < threshold:
             return None
         jargs = helper.july_heatmap_args(kwargs)
-        restaurant = self.swan.swiggy.get_restaurant(rest_id=str(item.restaurant_id))
+        restaurant = self.swan.swiggy.get_restaurant(restaurant_id=item.restaurant_id)
         title += f" {item.name} ({item.item_id})"
         title += f"\nRestaurant: {restaurant.name}, {restaurant.area_name}"
         title += f"\nTotal: {sum(actual_values)}"
