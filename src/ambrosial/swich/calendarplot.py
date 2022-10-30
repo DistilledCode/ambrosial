@@ -5,8 +5,9 @@ from typing import Any, Literal
 import july
 import matplotlib.pyplot as plt
 
+import ambrosial.swich.helper.ghubmap as helper
 from ambrosial.swan import SwiggyAnalytics
-from ambrosial.swich.helper.calendarplot import get_details, july_calmon_args
+from ambrosial.swich.helper.calendarplot import july_calmon_args
 
 BINS = "year+month+day"
 
@@ -30,6 +31,15 @@ class CalendarPlot:
     ) -> None:
         self._calendar_plot(
             code="on",
+            kwargs=kwargs,
+        )
+
+    def cal_offer_amount(
+        self,
+        **kwargs: Any,
+    ) -> None:
+        self._calendar_plot(
+            code="of",
             kwargs=kwargs,
         )
 
@@ -59,14 +69,30 @@ class CalendarPlot:
             kwargs=kwargs,
         )
 
+    def month_offer_amount(
+        self,
+        month: int,
+        year: int,
+        **kwargs: Any,
+    ) -> None:
+        self._month_plot(
+            code="of",
+            month=month,
+            year=year,
+            kwargs=kwargs,
+        )
+
     def _month_plot(
         self,
-        code: Literal["on", "oa"],
+        code: Literal["on", "oa", "of"],
         month: int,
         year: int,
         kwargs: dict[str, Any],
     ) -> None:
-        date_range_, values = get_details(code, self.swan, bins=BINS)
+        if code == "of":
+            date_range_, values = helper.offer_plot_value(self.swan)
+        else:
+            date_range_, values = helper.get_order_info(code, self.swan, BINS)
         month_total = sum(
             value
             for day, value in zip(date_range_, values)
@@ -76,6 +102,8 @@ class CalendarPlot:
             "on": "Total Order Count in "
             f"{calendar.month_abbr[month]}, {year}: {month_total}",
             "oa": "Total Amount Spent in "
+            f"{calendar.month_abbr[month]}, {year}: {month_total}",
+            "of": "Total Offer Availed in "
             f"{calendar.month_abbr[month]}, {year}: {month_total}",
         }
         kwargs.setdefault("title", default_title.get(code))
@@ -92,13 +120,18 @@ class CalendarPlot:
 
     def _calendar_plot(
         self,
-        code: Literal["on", "oa"],
+        code: Literal["on", "oa", "of"],
         kwargs: dict[str, Any],
     ) -> None:
-        date_range_, values = get_details(code, self.swan, BINS)
+        if code == "of":
+            date_range_, values = helper.offer_plot_value(self.swan)
+        else:
+            date_range_, values = helper.get_order_info(code, self.swan, BINS)
         default_title = {
             "on": f"Total Order Count: {sum(values)}",
             "oa": f"Total Amount Spent: {sum(values)}",
+            "of": f"Total Discount Availed: {sum(values)}\n"
+            f"{helper.extreme_value_str(date_range_, values)}",
         }
         kwargs.setdefault("cmap", "golden")
         kwargs.setdefault("title", default_title.get(code))
