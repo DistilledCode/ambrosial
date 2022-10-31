@@ -16,6 +16,7 @@ class OrderAnalytics:
         self.swiggy = swiggy
         self.all_orders: list[Order] = self.swiggy.get_orders()
         self.strftime_mapping = {
+            "minute": "%M",
             "hour": "%H",
             "day": "%d",
             "week": "%w",
@@ -24,6 +25,12 @@ class OrderAnalytics:
             "month": "%m",
             "month_": "%B",
             "year": "%Y",
+            "per_minute_": "%Y %B %d %H %M",
+            "per_minute": "%Y %m %d %H %M",
+            "per_hour_": "%Y %B %d %H",
+            "per_hour": "%Y %m %d %H",
+            "per_day_": "%Y %B %d",
+            "per_day": "%Y %m %d",
         }
 
     def group(self) -> NoReturn:
@@ -232,13 +239,15 @@ class OrderAnalytics:
         if chrono:
             # else keys will be sorted in alphabetical order instead of chronological
             strf_mapping = copy(self.strftime_mapping)
-            strf_mapping["month_"] = strf_mapping["month"]
+            strf_mapping["per_minute_"] = strf_mapping["per_minute"]
+            strf_mapping["per_hour_"] = strf_mapping["per_hour"]
+            strf_mapping["per_day_"] = strf_mapping["per_day"]
             strf_mapping["week_"] = strf_mapping["week"]
+            strf_mapping["month_"] = strf_mapping["month"]
         else:
             strf_mapping = self.strftime_mapping
-        bin_ = [attr for attr in bins.split("+") if attr]
         # cannot use set() as it doesnot preserve order
-        bin_ = list(dict.fromkeys(bin_))
+        bin_ = list(dict.fromkeys(attr for attr in bins.split("+") if attr))
         if any((x := attr) not in strf_mapping for attr in bin_):
             raise KeyError(
                 f"Invalid grouping key: {repr(x)}. "
