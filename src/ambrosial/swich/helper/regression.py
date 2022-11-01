@@ -105,8 +105,43 @@ def _df_ordtime_punctuality(
     return pd.DataFrame({"x": act_time, "y": prom_time, "color": sla_diff})
 
 
+def _df_ordamt_offramt(
+    swan: SwiggyAnalytics,
+    ro: bool,
+    **_: str,
+) -> pd.DataFrame:
+    orders = swan.swiggy.get_orders()
+    order_amount = []
+    offer_amount = []
+    offer_percentage = []
+    for order in orders:
+        if not order.mCancellationTime:
+            order_amount.append(order.order_total)
+            discount = sum(offer.total_offer_discount for offer in order.offers_data)
+            offer_amount.append(discount)
+            offer_percentage.append(discount / (discount + order.order_total))
+    if ro:
+        remove_outliers(order_amount, offer_amount, offer_percentage)
+    return pd.DataFrame(
+        {
+            "x": order_amount,
+            "y": offer_amount,
+            "color": offer_percentage,
+        }
+    )
+
+
 def get_dataframe(
-    code: Literal["oa", "oa_ofp", "oa_of", "ot_od", "ot_p_b", "ot_p", "od_p_b"],
+    code: Literal[
+        "oa",
+        "oa_ofp",
+        "oa_of",
+        "ot_od",
+        "ot_p_b",
+        "ot_p",
+        "od_p_b",
+        "oa_oa",
+    ],
     swan: SwiggyAnalytics,
     bins: str = "",
     ro: bool = True,
@@ -119,6 +154,7 @@ def get_dataframe(
         "ot_p_b": _df_ordtime_punctuality_bool,
         "ot_p": _df_ordtime_punctuality,
         "od_p_b": _df_orddist_punctuality_bool,
+        "oa_oa": _df_ordamt_offramt,
     }
 
     return func_dict[code](swan, bins=bins, ro=ro)

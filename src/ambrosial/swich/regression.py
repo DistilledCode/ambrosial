@@ -257,3 +257,48 @@ class RegressionPlot:
             size=15,
             rotation="horizontal",
         )
+
+    def ordamt_offramt(self, remove_outliers: bool = True) -> None:
+        # TODO: add kwarg option for different properties like axes
+        # TODO: also add option to make a regression line or not
+        # without regeression line it's just a good ol scatter plot
+        # TODO: Categorical plot wherever applicable
+        update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
+        df = get_dataframe(code="oa_oa", swan=self.swan, ro=remove_outliers)
+        p = sns.regplot(
+            data=df,
+            x="x",
+            y="y",
+            scatter=True,
+            truncate=True,
+            fit_reg=True,
+            order=1,
+            line_kws=self.line_kws_cb,
+            scatter_kws={**self.scatter_kws_cb, "c": df["color"], "cmap": self.cmap},
+        )
+        p.set_title(
+            "Offer Amount Availed v/s Order Amount Paid",
+            fontsize=15,
+        )
+        p.set_xticks(np.linspace(min(df["x"]), max(df["x"]), 10))
+        p.set_yticks(np.linspace(min(df["y"]), max(df["y"]), 10))
+        p.set_xlabel("Order Amount Paid  (₹)", fontsize=15, labelpad=10)
+        p.set_ylabel("Offer Amount Availed  (₹)", fontsize=15, labelpad=10)
+        p.grid(True, axis="both", ls=":")
+        sm = plt.cm.ScalarMappable(cmap=self.cmap)
+        sm.set_array([])
+        ax = p.figure.get_axes()
+        cbar = p.figure.colorbar(
+            sm,
+            ax=ax,
+            ticks=CustomLocator(ticks=10),
+            format=CustomFormatter(vmax=max(df["color"]), vmin=min(df["color"])),
+        )
+        cbar.set_label(
+            """
+                Offer Saving
+                (in percent)
+            """,
+            size=15,
+            rotation="horizontal",
+        )
