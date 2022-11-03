@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -7,170 +7,191 @@ from july.rcmod import update_rcparams
 from matplotlib.ticker import MaxNLocator
 
 from ambrosial.swan import SwiggyAnalytics
-from ambrosial.swich.helper.barplot import get_dataframe
-
-ORDER_BY_LITERALS = Literal["count", "total", "std_dev"]
+from ambrosial.swich.helper.barplot import GTYPE, get_dataframe, get_display_order
 
 
 class BarPlot:
     def __init__(self, swan: SwiggyAnalytics) -> None:
         self.swan = swan
 
-    # TODO: restaurant spending
+    # TODO: Use MaxNLocator for every tick place
     def restaurant_deltime(
         self,
         threshold: int = 4,
-        order_by: ORDER_BY_LITERALS = "count",
-        ascending: bool = False,
+        gtype: GTYPE = "average",
         errorbar: tuple[str, int] = ("ci", 95),
+        **kwargs: Any,
     ) -> None:
-        df, ordering_df = get_dataframe(code="rd", swan=self.swan, threshold=threshold)
-        ordering_df.sort_values(by=[order_by], inplace=True, ascending=ascending)
-        minor_title_dict = {
-            "count": "Number of Orders",
-            "total": "Total Delivery Time",
-            "std_dev": "Std. Dev. of Delivery Time",
-        }
+        df = get_dataframe(code="rd", swan=self.swan, threshold=threshold, gtype=gtype)
+        axis_labels = (f"{gtype.title()} Delivery Time (minutes)", "Restaurant")
+        title = f"{gtype.title()} Delivery Time Of Restaurants"
         self._make_barplot(
-            dataframes=(df, ordering_df),
-            ordering_info=(order_by, minor_title_dict),
+            df=df,
+            labels=(axis_labels, title),
             errorbar=errorbar,
-            axis_labels=("Avg Delivery Time (minutes)", "Restaurant"),
-            major_title="Delivery Time Of Restaurants",
+            gtype=gtype,
+            **kwargs,
         )
 
     def item_spending(
         self,
         threshold: int = 4,
-        order_by: ORDER_BY_LITERALS = "total",
-        ascending: bool = False,
+        gtype: GTYPE = "total",
         errorbar: tuple[str, int] = ("sd", 1),
+        **kwargs: Any,
     ) -> None:
-        df, ordering_df = get_dataframe(code="is", swan=self.swan, threshold=threshold)
-        ordering_df.sort_values(by=[order_by], inplace=True, ascending=ascending)
-        minor_title_dict = {
-            "count": "Item Count",
-            "total": "Total Amount Paid",
-            "std_dev": "Std. Dev. of Item Cost",
-        }
+        df = get_dataframe(code="is", swan=self.swan, threshold=threshold, gtype=gtype)
+        axis_labels = ("Amount Spent (₹)", "Item Name")
+        title = f"{gtype.title()} Amount Spent on Items"
         self._make_barplot(
-            dataframes=(df, ordering_df),
-            ordering_info=(order_by, minor_title_dict),
+            df=df,
+            labels=(axis_labels, title),
             errorbar=errorbar,
-            axis_labels=("Average Item Cost", "Item Name"),
-            major_title="Amount Spent On Items",
+            gtype=gtype,
+            **kwargs,
+        )
+
+    def restaurant_spending(
+        self,
+        threshold: int = 5,
+        gtype: GTYPE = "total",
+        errorbar: tuple[str, int] = ("sd", 1),
+        **kwargs: Any,
+    ) -> None:
+        df = get_dataframe(code="rs", swan=self.swan, threshold=threshold, gtype=gtype)
+        axis_labels = ("Amount Spent (₹)", "Restaurant Name")
+        title = f"{gtype.title()} Amount Spent in Restaurants"
+        self._make_barplot(
+            df=df,
+            labels=(axis_labels, title),
+            errorbar=errorbar,
+            gtype=gtype,
+            **kwargs,
+        )
+
+    def item_count(
+        self,
+        threshold: int = 4,
+        errorbar: tuple[str, int] = ("sd", 1),
+        **kwargs: Any,
+    ) -> None:
+        df = get_dataframe(code="ic", swan=self.swan, threshold=threshold)
+        axis_labels = ("Item Count", "Item Name")
+        title = "Number of Items Ordered"
+        self._make_barplot(
+            df=df,
+            labels=(axis_labels, title),
+            errorbar=errorbar,
+            **kwargs,
+        )
+
+    def restaurant_count(
+        self,
+        threshold: int = 5,
+        errorbar: tuple[str, int] = ("sd", 1),
+        **kwargs: Any,
+    ) -> None:
+        df = get_dataframe(code="rc", swan=self.swan, threshold=threshold)
+        axis_labels = ("Order Count", "Restaurant Name")
+        title = "Number of Orders from Restaurant"
+        self._make_barplot(
+            df=df,
+            labels=(axis_labels, title),
+            errorbar=errorbar,
+            **kwargs,
         )
 
     def coupon_discount(
         self,
         threshold: int = 0,
-        order_by: ORDER_BY_LITERALS = "total",
-        ascending: bool = False,
+        gtype: GTYPE = "total",
         errorbar: tuple[str, int] = ("sd", 1),
+        **kwargs: Any,
     ) -> None:
-        df, ordering_df = get_dataframe(code="od", swan=self.swan, threshold=threshold)
-        ordering_df.sort_values(by=[order_by], inplace=True, ascending=ascending)
-        minor_title_dict = {
-            "count": "Coupon Count",
-            "total": "Total Discount Availed",
-            "std_dev": "Std. Dev. of Discount Availed",
-        }
+        df = get_dataframe(code="cd", swan=self.swan, threshold=threshold, gtype=gtype)
+        axis_labels = (f"{gtype.title()} Availed Discount (₹)", "Coupon Code")
+        title = f"{gtype.title()} Availed Discount on Orders"
         self._make_barplot(
-            dataframes=(df, ordering_df),
-            ordering_info=(order_by, minor_title_dict),
+            df=df,
+            labels=(axis_labels, title),
             errorbar=errorbar,
-            axis_labels=("Average Discount Availed", "Coupon Code"),
-            major_title="Discount Availed From Coupon Codes",
+            gtype=gtype,
+            **kwargs,
         )
 
     def payment_method(
         self,
         threshold: int = 0,
-        order_by: ORDER_BY_LITERALS = "total",
-        ascending: bool = False,
+        gtype: GTYPE = "total",
         errorbar: tuple[str, int] = ("sd", 1),
+        **kwargs: Any,
     ) -> None:
-        df, ordering_df = get_dataframe(code="pm", swan=self.swan, threshold=threshold)
-        ordering_df.sort_values(by=[order_by], inplace=True, ascending=ascending)
-        minor_title_dict = {
-            "count": "Method Count",
-            "total": "Total Payment Made",
-            "std_dev": "Std. Dev. of Amount Transacted",
-        }
+        df = get_dataframe(code="pm", swan=self.swan, threshold=threshold, gtype=gtype)
+        axis_labels = (f"{gtype.title()} Transaction Amount (₹)", "Payment Method")
+        title = "Transaction Amount v/s Payment Method"
         self._make_barplot(
-            dataframes=(df, ordering_df),
-            ordering_info=(order_by, minor_title_dict),
+            df=df,
+            labels=(axis_labels, title),
             errorbar=errorbar,
-            axis_labels=("Average Amount Per Transaction", "Payment Method"),
-            major_title="Transaction Amount v/s Payment Method",
+            gtype=gtype,
+            **kwargs,
         )
 
     def payment_type(
         self,
         threshold: int = 0,
-        order_by: ORDER_BY_LITERALS = "total",
-        ascending: bool = False,
+        gtype: GTYPE = "total",
         errorbar: tuple[str, int] = ("sd", 1),
+        **kwargs: Any,
     ) -> None:
-        df, ordering_df = get_dataframe(code="pt", swan=self.swan, threshold=threshold)
-        ordering_df.sort_values(by=[order_by], inplace=True, ascending=ascending)
-        minor_title_dict = {
-            "count": "Type Count",
-            "total": "Total Payment Made",
-            "std_dev": "Std. Dev. of Amount Transacted",
-        }
+        df = get_dataframe(code="pt", swan=self.swan, threshold=threshold, gtype=gtype)
+        axis_labels = (f"{gtype.title()} Transaction Amount (₹)", "Payment Type")
+        title = "Transaction Amount v/s Payment Type"
+
         self._make_barplot(
-            dataframes=(df, ordering_df),
-            ordering_info=(order_by, minor_title_dict),
+            df=df,
+            labels=(axis_labels, title),
             errorbar=errorbar,
-            axis_labels=("Average Amount Per Transaction", "Payment Type"),
-            major_title="Transaction Amount v/s Payment Type",
+            gtype=gtype,
+            **kwargs,
         )
 
     def _make_barplot(
         self,
-        dataframes: tuple[pd.DataFrame, pd.DataFrame],
-        ordering_info: tuple[ORDER_BY_LITERALS, dict[str, str]],
-        axis_labels: tuple[str, str],
+        df: tuple[pd.DataFrame, pd.DataFrame],
+        labels: tuple[tuple[str, str], str],
         errorbar: tuple[str, int],
-        major_title: str,
-    ) -> None:
-        update_rcparams(titlepad=10, titlesize="medium", fontsize=12)
-        dataframe, ordering_dataframe = dataframes
-        order_by, minor_title_dict = ordering_info
-        order = ordering_dataframe["category_name"]
-        grid = sns.JointGrid(ratio=3, space=0.1, marginal_ticks=True)
-        sns.barplot(
-            data=ordering_dataframe,
-            y="category_name",
-            x=order_by,
-            order=order,
-            facecolor=(0, 0, 0, 0),
-            edgecolor=".5",
-            ax=grid.ax_marg_y,
+        gtype: Optional[GTYPE] = None,
+        **kwargs: Any,
+    ) -> plt.Axes:
+        axis_labels, title = labels
+        update_rcparams(
+            titlepad=15,
+            titlesize="large",
+            fontsize=12,
+            ymargin=0.02,
+            xmargin=0.02,
         )
-        sns.barplot(
-            data=dataframe,
+        display_order = get_display_order(df) if gtype == "average" else None
+        bp = sns.barplot(
+            data=df,
             x="x",
             y="y",
-            order=order,
+            order=display_order,
             errorbar=errorbar,
             capsize=0.2,
             errcolor=(1, 0, 0, 1),
             errwidth=1.25,
-            linewidth=1.25,
+            linewidth=1.0,
             edgecolor=".1",
             facecolor=(0, 0, 0, 0),
-            ax=grid.ax_joint,
+            **kwargs,
         )
-        minor_title = minor_title_dict.get(order_by)
-        grid.ax_marg_y.set_title(minor_title)
-        grid.ax_joint.set_title(major_title)
-        grid.set_axis_labels(*axis_labels)
-        grid.ax_marg_y.tick_params(labelbottom=True, labelsize=10)
-        grid.ax_joint.tick_params(labelsize=9)
-        grid.ax_marg_y.grid(True, axis="x", ls=":")
-        grid.ax_joint.grid(True, axis="x", ls=":")
-        grid.ax_marg_y.xaxis.set_major_locator(MaxNLocator(6))
-        grid.ax_marg_x.remove()
-        plt.subplots_adjust(left=0.20, top=1.25)
+        bp.xaxis.set_major_locator(MaxNLocator(nbins=12))
+        bp.set_title(title)
+        bp.set_xlabel(axis_labels[0], labelpad=12)
+        bp.set_ylabel(axis_labels[1], labelpad=12)
+        bp.tick_params(labelsize=10)
+        bp.grid(True, axis="x", ls=":")
+        plt.subplots_adjust(left=0.225, right=0.975, top=0.925)
+        return bp
