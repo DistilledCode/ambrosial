@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import seaborn as sns
 from july.rcmod import update_rcparams
+from matplotlib.ticker import MaxNLocator
 from palettable.lightbartlein import diverging
 
 from ambrosial.swan import SwiggyAnalytics
@@ -31,6 +31,10 @@ class RegressionPlot:
         self.line_kws = {"color": "tomato", "linewidth": 3.0}
         sns.set_theme(style="ticks")
 
+    @property
+    def maxnlocator(self) -> MaxNLocator:
+        return MaxNLocator(nbins=10)
+
     def order_amount(self, bins: str = BINS) -> None:
         update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
         df = get_dataframe(code="oa", swan=self.swan, bins=bins)
@@ -46,12 +50,12 @@ class RegressionPlot:
             line_kws=self.line_kws,
             scatter_kws=self.scatter_kws,
         )
-        p.set_xticks(range(0, len(df), len(df) // 6))
-        p.set_xticklabels(df["xlabel"][:: len(df) // 6])
-
+        p.set_xticks(range(0, len(df), len(df) // 10))
+        p.set_xticklabels(df["xlabel"][:: len(df) // 10])
         p.set_title(f'Order Total\nbins="{bins}"', fontsize=15)
         p.set_xlabel("")
         p.set_ylabel("Order Total    (in ₹)", fontsize=15)
+        p.grid(True, axis="both", ls=":")
 
     def ordamt_ordfeeprcnt(
         self,
@@ -72,10 +76,11 @@ class RegressionPlot:
             scatter_kws=self.scatter_kws,
         )
         p.set_title(f'Fee Percentage v/s Order Total\nbins="{bins}"', fontsize=15)
-        p.set_xticks([int(i) for i in np.linspace(min(df["x"]), max(df["x"]), 10)])
-        p.set_yticks([float(i) for i in np.linspace(min(df["y"]), max(df["y"]), 10)])
+        p.xaxis.set_major_locator(self.maxnlocator)
+        p.yaxis.set_major_locator(self.maxnlocator)
         p.set_ylabel("Fee as % of Order Total\n", fontsize=15)
         p.set_xlabel("Order Total    (in ₹)", fontsize=15)
+        p.grid(True, axis="both", ls=":")
 
     def ordamt_ordfee(self, bins: str = BINS, remove_outliers: bool = True) -> None:
         update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
@@ -92,10 +97,11 @@ class RegressionPlot:
             scatter_kws={**self.scatter_kws_cb, "c": df["color"], "cmap": self.cmap},
         )
         p.set_title(f'Order Total v/s Order Fee\nbins="{bins}"', fontsize=15)
-        p.set_xticks([int(i) for i in np.linspace(min(df["x"]), max(df["x"]), 10)])
-        p.set_yticks([int(i) for i in np.linspace(min(df["y"]), max(df["y"]), 10)])
+        p.xaxis.set_major_locator(self.maxnlocator)
+        p.yaxis.set_major_locator(self.maxnlocator)
         p.set_xlabel("Order Fee    (in ₹)", fontsize=15)
         p.set_ylabel("Order Total    (in ₹)", fontsize=15)
+        p.grid(True, axis="both", ls=":")
         sm = plt.cm.ScalarMappable(cmap=self.cmap)
         sm.set_array([])
         ax = p.figure.get_axes()
@@ -107,8 +113,8 @@ class RegressionPlot:
         )
         cbar.set_label(
             """
-                        Fee as % of
-                        Order Total
+                Fee as % of
+                Order Total
             """,
             size=15,
             rotation="horizontal",
@@ -130,28 +136,11 @@ class RegressionPlot:
             scatter_kws=self.scatter_kws,
         )
         p.set_title("Order Delivery Time v/s Order Distance", fontsize=15)
-        p.set_xticks(
-            [
-                round(float(i), 2)
-                for i in np.linspace(
-                    min(df["x"]),
-                    max(df["x"]),
-                    10,
-                )
-            ]
-        )
-        p.set_yticks(
-            [
-                round(float(i), 2)
-                for i in np.linspace(
-                    min(df["y"]),
-                    max(df["y"]),
-                    10,
-                )
-            ]
-        )
+        p.xaxis.set_major_locator(self.maxnlocator)
+        p.yaxis.set_major_locator(self.maxnlocator)
         p.set_xlabel("Order Distance  (kms)", fontsize=15)
         p.set_ylabel("Order Delivery Time  (minutes)\n", fontsize=15)
+        p.grid(True, axis="both", ls=":")
 
     def ordtime_punctuality_bool(self, remove_outliers: bool = True) -> None:
         update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
@@ -170,20 +159,12 @@ class RegressionPlot:
             scatter_kws=self.scatter_kws,
         )
         p.set_title("Punctuality v/s Order Delivery Time\n", fontsize=15)
-        p.set_xticks(
-            [
-                round(float(i), 2)
-                for i in np.linspace(
-                    min(df["x"]),
-                    max(df["x"]),
-                    10,
-                )
-            ]
-        )
+        p.xaxis.set_major_locator(self.maxnlocator)
         p.set_yticks([0, 1])
         p.set_yticklabels(["No", "Yes"])
         p.set_xlabel("Order Delivery Time  (minutes)", fontsize=15)
         p.set_ylabel("Was Order On Time\n", fontsize=15)
+        p.grid(True, axis="both", ls=":")
 
     def orddist_punctuality_bool(self, remove_outliers: bool = True) -> None:
         update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
@@ -202,20 +183,12 @@ class RegressionPlot:
             scatter_kws=self.scatter_kws,
         )
         p.set_title("Punctuality v/s Order Distance\n", fontsize=15)
-        p.set_xticks(
-            [
-                round(float(i), 2)
-                for i in np.linspace(
-                    min(df["x"]),
-                    max(df["x"]),
-                    10,
-                )
-            ]
-        )
+        p.xaxis.set_major_locator(self.maxnlocator)
         p.set_yticks([0, 1])
         p.set_yticklabels(["No", "Yes"])
         p.set_xlabel("Order Distance (km)", fontsize=15)
         p.set_ylabel("Was Order On Time\n", fontsize=15)
+        p.grid(True, axis="both", ls=":")
 
     def ordtime_punctuality(self, remove_outliers: bool = True) -> None:
         update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
@@ -236,10 +209,11 @@ class RegressionPlot:
             "SLA Difference = Promised Time - Actual Time",
             fontsize=15,
         )
-        p.set_xticks(np.linspace(min(df["x"]), max(df["x"]), 10))
-        p.set_yticks(np.linspace(min(df["y"]), max(df["y"]), 10))
+        p.xaxis.set_major_locator(self.maxnlocator)
+        p.yaxis.set_major_locator(self.maxnlocator)
         p.set_xlabel("Actual Delivery Time  (minutes)", fontsize=15)
         p.set_ylabel("Promised Delivery Time  (minutes)", fontsize=15)
+        p.grid(True, axis="both", ls=":")
         sm = plt.cm.ScalarMappable(cmap=self.cmap)
         sm.set_array([])
         ax = p.figure.get_axes()
@@ -280,8 +254,8 @@ class RegressionPlot:
             "Offer Amount Availed v/s Order Amount Paid",
             fontsize=15,
         )
-        p.set_xticks(np.linspace(min(df["x"]), max(df["x"]), 10))
-        p.set_yticks(np.linspace(min(df["y"]), max(df["y"]), 10))
+        p.xaxis.set_major_locator(self.maxnlocator)
+        p.yaxis.set_major_locator(self.maxnlocator)
         p.set_xlabel("Order Amount Paid  (₹)", fontsize=15, labelpad=10)
         p.set_ylabel("Offer Amount Availed  (₹)", fontsize=15, labelpad=10)
         p.grid(True, axis="both", ls=":")
