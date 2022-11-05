@@ -31,13 +31,7 @@ class DeliveryTimeStats(TypedDict):
     total_deliveries: int
 
 
-# class ItemHistory(TypedDict):
-#     item: Item
-#     order: Order
-#     address: Address
-
-
-class Summarise(TypedDict):
+class ItemSummary(TypedDict):
     total_quantity: int
     avg_base_price: float
     total_base_price: float
@@ -47,6 +41,24 @@ class Summarise(TypedDict):
     avg_actual_cost: float
     image_url: HttpUrl
     received_for_free: int
+
+
+class RestaurantSummary(TypedDict):
+    name: str
+    restaurant_id: int
+    count: int
+    total_spent: int
+    avg_spent: float
+    total_saving: float
+    avg_saving: float
+    saving_percentage: float
+    total_charges: float
+    avg_charges: float
+    total_distance: float
+    items_ordered: dict[str, int]
+    weekday_frequency: dict[str, int]
+    hour_frequency: dict[str, int]
+    image_url: HttpUrl
 
 
 class DelTimeExtreme(TypedDict):

@@ -1,6 +1,7 @@
 from collections import Counter, defaultdict
 from typing import Any, Optional
 
+from ambrosial.swan.typealiases import RestaurantSummary
 from ambrosial.swiggy import Swiggy
 from ambrosial.swiggy.datamodel.order import Order
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
@@ -43,6 +44,55 @@ class RestaurantAnalytics:
             else:
                 group_dict[getattr(rest, key)].append(rest)
         return dict(group_dict)
+
+    def summarise(self, restaurant_id: int) -> RestaurantSummary:
+        instances = self.associated_orders(restaurant_id)
+        count = len(instances)
+        total_distance = 0.0
+        total_spent = 0
+        total_save = 0.0
+        total_charges = 0.0
+        items_ordered: list[list[str]] = []
+        weekday_frequency: list[str] = []
+        hour_frequency: list[str] = []
+        restaurant = instances[0].restaurant
+        name = f"{restaurant.name}, {restaurant.area_name} ({restaurant.city_name})"
+        image_url = restaurant.cover_image
+        for order in instances:
+            if order.mCancellationTime:
+                continue
+            total_spent += order.order_total
+            total_save += sum(offer.total_offer_discount for offer in order.offers_data)
+            total_charges += sum(order.charges.values())
+            weekday_frequency.append(order.order_time.strftime("%A"))
+            hour_frequency.append(order.order_time.strftime("%H"))
+            items_ordered.extend([item.name] * item.quantity for item in order.items)
+            total_distance += order.restaurant.customer_distance[1]
+        return RestaurantSummary(
+            name=name,
+            restaurant_id=restaurant_id,
+            count=count,
+            total_spent=total_spent,
+            avg_spent=round(total_spent / count, 3),
+            total_saving=round(total_save, 3),
+            avg_saving=round(total_save / count, 3),
+            total_charges=round(total_charges, 3),
+            avg_charges=round(total_charges / count, 3),
+            saving_percentage=round(total_save / (total_save + total_spent) * 100, 3),
+            total_distance=round(total_distance, 3),
+            items_ordered=dict(
+                Counter(
+                    [
+                        item_name
+                        for item_list in items_ordered
+                        for item_name in item_list
+                    ]
+                ).most_common()
+            ),
+            weekday_frequency=dict(Counter(weekday_frequency).most_common()),
+            hour_frequency=dict(Counter(hour_frequency).most_common()),
+            image_url=image_url,
+        )
 
     def cuisines(self) -> dict[str, int]:
         return dict(

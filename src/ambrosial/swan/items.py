@@ -46,7 +46,7 @@ class ItemAnalytics:
             for order_id in self.swiggy.cache.items[str(item_id)]
         ]
 
-    def summarise(self, item_id: int) -> alias.Summarise:
+    def summarise(self, item_id: int) -> alias.ItemSummary:
         """
         total_actual_cost & avg_actual_cost inlcudes GST but excludes
         Packaging, Convenience, Cancellation, and Delivery Charges.
@@ -68,7 +68,7 @@ class ItemAnalytics:
             total_actual_cost += item.effective_item_price
             total_tax += sum(item.item_charges.values())
             received_for_free += item.free_item_quantity
-        return alias.Summarise(
+        return alias.ItemSummary(
             total_quantity=total_quantity,
             avg_base_price=round(total_base_price / total_quantity, 3),
             total_base_price=round(total_base_price, 3),
