@@ -1,7 +1,7 @@
 import heapq
 from collections import defaultdict
 from datetime import date, datetime, timedelta
-from typing import Any, Literal
+from typing import Any, Callable, Literal, Union
 
 from july.utils import date_range
 
@@ -43,6 +43,32 @@ def offer_plot_value(swan: SwiggyAnalytics) -> tuple[list[date], list[int]]:
     return drange, values
 
 
+def super_plot_value(swan: SwiggyAnalytics) -> tuple[list[date], list[float]]:
+    value_dict = {
+        tseries: values["total_benefit"]
+        for tseries, values in swan.orders.tseries_super_benefits("per_day").items()
+    }
+    drange = date_range(
+        min(value_dict).replace(" ", "-"),
+        max(value_dict).replace(" ", "-"),
+    )
+    values = [value_dict.get(str(date_).replace("-", " "), 0) for date_ in drange]
+    return drange, values
+
+
+def total_savings_plot_value(swan: SwiggyAnalytics) -> tuple[list[date], list[float]]:
+    offer_drange, offer_values = offer_plot_value(swan)
+    offer_vd = dict(zip(offer_drange, offer_values))
+    super_drange, super_values = super_plot_value(swan)
+    super_vd = dict(zip(super_drange, super_values))
+    drange = date_range(
+        min(min(offer_drange), min(super_drange)),
+        max(max(offer_drange), max(super_drange)),
+    )
+    values = [offer_vd.get(date_, 0) + super_vd.get(date_, 0) for date_ in drange]
+    return drange, values
+
+
 def get_grouped_restaurant(
     swan: SwiggyAnalytics,
     restaurant_id: int,
@@ -67,10 +93,7 @@ def restaurant_plot_value(
     return drange, values
 
 
-def get_grouped_item(
-    swan: SwiggyAnalytics,
-    item_id: int,
-) -> tuple[Item, list[Order]]:
+def get_grouped_item(swan: SwiggyAnalytics, item_id: int) -> tuple[Item, list[Order]]:
     item = swan.swiggy.get_item(item_id=item_id)
     orders = swan.items.associated_orders(item_id=item_id)
     return item, orders
@@ -94,15 +117,29 @@ def item_plot_value(
     return drange, values
 
 
-def get_order_info(
-    code: Literal["oa", "on"],
+def get_plot_values(
+    code: Literal["oa", "oc", "od", "sb", "ts"],
     swan: SwiggyAnalytics,
-    bins: str,
+) -> tuple[list[date], Union[list[int], list[float]]]:
+    # using this instead of tuple to satisfy the type-checking gods
+    if code == "oa" or code == "oc":
+        return get_order_info(code, swan)
+    func_dict: dict[str, Callable] = {
+        "od": offer_plot_value,
+        "sb": super_plot_value,
+        "ts": total_savings_plot_value,
+    }
+    return func_dict[code](swan)
+
+
+def get_order_info(
+    code: Literal["oa", "oc"],
+    swan: SwiggyAnalytics,
 ) -> tuple[list[date], list[int]]:
     if code == "oa":
-        value_dict = swan.orders.tseries_amount(bins)
+        value_dict = swan.orders.tseries_amount("per_day")
     else:
-        value_dict = swan.orders.tseries_count(bins)
+        value_dict = swan.orders.tseries_count("per_day")
     date_range_ = date_range(
         min(value_dict).replace(" ", "-"),
         max(value_dict).replace(" ", "-"),
@@ -111,24 +148,18 @@ def get_order_info(
     return date_range_, values
 
 
-def _get_drange_from_orders(
-    orders: list[Order],
-) -> list[date]:
+def _get_drange_from_orders(orders: list[Order]) -> list[date]:
     min_time = min(orders, key=lambda x: x.order_time).order_time
     max_time = max(orders, key=lambda x: x.order_time).order_time
     return _get_drange_from_datetime(min_time, max_time)
 
 
-def _get_drange_from_datetime(
-    min_time: datetime,
-    max_time: datetime,
-) -> list[date]:
+def _get_drange_from_datetime(min_time: datetime, max_time: datetime) -> list[date]:
     min_date = min_time.date()
     max_date = max_time.date()
-    month_diff = (max_date.month - min_date.month) + (
-        12 if min_date.month > max_date.month else 0
-    )
     # if difference is less than 4 months then the graph is clipping into cbar
+    month_diff = max_date.month - min_date.month
+    month_diff += 12 if max_date.year > min_date.year else 0
     if month_diff < 4:
         min_date = (min_date - timedelta(days=28 * (4 - month_diff))).replace(day=1)
     else:
@@ -137,7 +168,7 @@ def _get_drange_from_datetime(
     return date_range(min_date, max_date)
 
 
-def extreme_value_str(dates: list[date], values: list[int]) -> str:
+def extreme_value_str(dates: list[date], values: Union[list[int], list[float]]) -> str:
     actual_min = heapq.nsmallest(2, set(values))[-1]
     actual_max, max_date = max(zip(values, dates), key=lambda x: x[0])
     for day, val in zip(dates, values):

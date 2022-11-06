@@ -9,8 +9,6 @@ import ambrosial.swich.helper.ghubmap as helper
 from ambrosial.swan import SwiggyAnalytics
 from ambrosial.swich.helper.calendarplot import july_calmon_args
 
-BINS = "year+month+day"
-
 
 class CalendarPlot:
     def __init__(self, swan: SwiggyAnalytics) -> None:
@@ -30,7 +28,7 @@ class CalendarPlot:
         **kwargs: Any,
     ) -> None:
         self._calendar_plot(
-            code="on",
+            code="oc",
             kwargs=kwargs,
         )
 
@@ -63,7 +61,7 @@ class CalendarPlot:
         **kwargs: Any,
     ) -> None:
         self._month_plot(
-            code="on",
+            code="oc",
             month=month,
             year=year,
             kwargs=kwargs,
@@ -84,7 +82,7 @@ class CalendarPlot:
 
     def _month_plot(
         self,
-        code: Literal["on", "oa", "of"],
+        code: Literal["oc", "oa", "of"],
         month: int,
         year: int,
         kwargs: dict[str, Any],
@@ -92,7 +90,7 @@ class CalendarPlot:
         if code == "of":
             date_range_, values = helper.offer_plot_value(self.swan)
         else:
-            date_range_, values = helper.get_order_info(code, self.swan, BINS)
+            date_range_, values = helper.get_order_info(code, self.swan)
         month_total = sum(
             value
             for day, value in zip(date_range_, values)
@@ -120,13 +118,13 @@ class CalendarPlot:
 
     def _calendar_plot(
         self,
-        code: Literal["on", "oa", "of"],
+        code: Literal["oc", "oa", "of"],
         kwargs: dict[str, Any],
     ) -> None:
         if code == "of":
             date_range_, values = helper.offer_plot_value(self.swan)
         else:
-            date_range_, values = helper.get_order_info(code, self.swan, BINS)
+            date_range_, values = helper.get_order_info(code, self.swan)
         default_title = {
             "on": f"Total Order Count: {sum(values)}",
             "oa": f"Total Amount Spent: {sum(values)}",
