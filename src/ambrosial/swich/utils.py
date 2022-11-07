@@ -84,6 +84,6 @@ def _remove_outlier(
             eachlist.pop(index)
 
 
-def remove_outliers(*args: list[Any], tolerance: int = 5) -> None:
+def remove_outliers(*args: list[Any]) -> None:
     for i in range(len(args)):
-        _remove_outlier(*args[0:i], *args[i + 1 :], target=args[i], tolerance=tolerance)
+        _remove_outlier(*args[0:i], *args[i + 1 :], target=args[i], tolerance=5)

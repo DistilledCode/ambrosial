@@ -14,7 +14,6 @@ class BarPlot:
     def __init__(self, swan: SwiggyAnalytics) -> None:
         self.swan = swan
 
-    # TODO: Use MaxNLocator for every tick place
     def restaurant_deltime(
         self,
         threshold: int = 4,
@@ -166,9 +165,9 @@ class BarPlot:
     ) -> plt.Axes:
         axis_labels, title = labels
         update_rcparams(
-            titlepad=15,
+            titlepad=12,
             titlesize="large",
-            fontsize=12,
+            fontsize=15,
             ymargin=0.02,
             xmargin=0.02,
         )
@@ -191,7 +190,7 @@ class BarPlot:
         bp.set_title(title)
         bp.set_xlabel(axis_labels[0], labelpad=12)
         bp.set_ylabel(axis_labels[1], labelpad=12)
-        bp.tick_params(labelsize=10)
+        bp.tick_params(labelsize=12)
         bp.grid(True, axis="x", ls=":")
         plt.subplots_adjust(left=0.225, right=0.975, top=0.925)
         return bp

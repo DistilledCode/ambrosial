@@ -1,6 +1,6 @@
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 from warnings import warn
 
 from requests import Response, get
@@ -17,15 +17,15 @@ from ambrosial.swiggy.utils import SwiggyOrderDict
 
 
 class Swiggy:
+    order_url: ClassVar[str] = "https://www.swiggy.com/dapi/order/all"
+    profile_url: ClassVar[str] = "https://www.swiggy.com/mapi/profile/info"
+
     def __init__(self, path: Optional[Path] = None, ddav: bool = False) -> None:
         self.ddav = ddav
-        self._o_url = "https://www.swiggy.com/dapi/order/all"
-        self._p_url = "https://www.swiggy.com/mapi/profile/info"
         self.orders_raw: list[SwiggyOrderDict] = []
         self.orders_refined: list[SwiggyOrderDict] = []
         self._response: Response = Response()
         self._response_json: dict[str, Any] = {}
-        self._customer_info: utils.UserInfo = {}
         self._fetched = False
         self.home_path = Path.home() / ".ambrosial" if path is None else path
         self._data_path = self.home_path / "data"
@@ -40,11 +40,11 @@ class Swiggy:
     def get_account_info(self) -> utils.UserInfo:
         temp_cookie = self._cookie_jar
         temp_cookie.set_cookie(utils.get_empty_sid())
-        self._response = get(self._p_url, cookies=temp_cookie)
+        self._response = get(Swiggy.profile_url, cookies=temp_cookie)
         self._response_json = self._response.json()
         utils.validate_response(self._response)
         data = self._response_json["data"]
-        self._customer_info = utils.UserInfo(
+        return utils.UserInfo(
             customer_id=data["customer_id"],
             name=data["name"],
             mobile=data["mobile"],
@@ -53,7 +53,6 @@ class Swiggy:
             super_status=data["optional_map"]["IS_SUPER"]["value"]["superStatus"],
             user_registered=data["user_registered"],
         )
-        return self._customer_info
 
     def fetch_orders(self) -> None:
         self.orders_raw = []
@@ -157,7 +156,7 @@ class Swiggy:
 
     def _send_req(self, order_id: Optional[int] = None) -> None:
         param = {} if order_id is None else {"order_id": order_id}
-        self._response = get(self._o_url, cookies=self._cookie_jar, params=param)
+        self._response = get(Swiggy.order_url, cookies=self._cookie_jar, params=param)
         self._response_json = self._response.json()
 
     def _get_processed_order(self) -> list[SwiggyOrderDict]:

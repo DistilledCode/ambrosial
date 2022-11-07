@@ -89,9 +89,6 @@ class Order(BaseModel):
     super_specific_discount: NonNegativeFloat
     rating_meta: OrderTypeHint.RATING_META
     customer_user_agent: str
-    # ! coordinates from where the order was placed?
-    billing_lat: float
-    billing_lng: float
     payment_txn_id: str
     order_payment_method: str
     is_refund_initiated: bool
@@ -103,9 +100,6 @@ class Order(BaseModel):
     payment_txn_status: OrderTypeHint.PAYMENT_TXN_STATUS
     rain_mode: int
     is_super_long_distance: bool
-    device_id: str
-    swuid: str
-    sid: str
     previous_cancellation_fee: NonNegativeInt
     coupon_type: OrderTypeHint.COUPON_TYPE
     coupon_description: str

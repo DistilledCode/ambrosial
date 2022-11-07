@@ -12,6 +12,8 @@ from ambrosial.swiggy.datamodel.restaurant import Restaurant
 from ambrosial.swiggy.utils import create_path
 
 
+# TODO: time series version of these maps?
+#  https://www.kaggle.com/code/imoore/easy-tutorial-for-plotting-with-python/notebook
 class Map:
     def __init__(self, swan: SwiggyAnalytics) -> None:
         self.swan = swan
@@ -38,7 +40,6 @@ class Map:
         popup_frmt: Optional[str] = None,
         save: bool = True,
     ) -> folium.Map:
-        # TODO: Show number of orders as quantiles in Layer
         restaurants = (
             self.swan.swiggy.get_restaurants()
             if nationwide

@@ -78,7 +78,7 @@ def _df_item_count(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     df = pd.DataFrame(swan.items.grouped_count(group_by="name"), index=["x"])
     df = df.transpose().reset_index(0, names=["y", "x"])
-    return df[df["x"] > threshold]
+    return df[df["x"] >= threshold]
 
 
 def _df_restaurant_count(swan: SwiggyAnalytics, threshold: int) -> pd.DataFrame:
@@ -90,7 +90,7 @@ def _df_restaurant_count(swan: SwiggyAnalytics, threshold: int) -> pd.DataFrame:
         index=["x"],
     )
     df = df.transpose().reset_index(0, names=["y", "x"])
-    return df[df["x"] > threshold]
+    return df[df["x"] >= threshold]
 
 
 def _df_coupon_discount(

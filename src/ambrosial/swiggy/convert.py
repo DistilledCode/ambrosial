@@ -64,7 +64,7 @@ def item(order: SwiggyOrderDict) -> list[Item]:
     ]
 
 
-def restaurant(order: dict, ddav: bool) -> Restaurant:
+def restaurant(order: SwiggyOrderDict, ddav: bool) -> Restaurant:
     address = order["delivery_address"]
     address_id = f'{address["id"]}_{address["version"]}' if ddav else address["id"]
     customer_distance = (address_id, order["restaurant_customer_distance"])

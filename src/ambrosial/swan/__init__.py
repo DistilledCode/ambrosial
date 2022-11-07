@@ -12,7 +12,7 @@ class SwiggyAnalytics:
     def __init__(self, swiggy: Optional[Swiggy] = None) -> None:
         self.swiggy = Swiggy() if swiggy is None else swiggy
         if self.swiggy._fetched is False:
-            self.swiggy.loadj()
+            self.swiggy.loadb()
         self.orders = OrderAnalytics(self.swiggy)
         self.offers = OfferAnalytics(self.swiggy)
         self.items = ItemAnalytics(self.swiggy)

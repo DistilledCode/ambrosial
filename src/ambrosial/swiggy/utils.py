@@ -11,7 +11,24 @@ from requests import HTTPError, Response
 SwiggyOrderDict = NewType("SwiggyOrderDict", dict[str, Any])
 
 
-class UserInfo(TypedDict, total=False):
+# def timeit(func):
+#     from time import perf_counter
+
+#     def wrapper_func(*args, tlist=[], **kwargs):
+#         start = perf_counter()
+#         result = func(*args, **kwargs)
+#         time_taken = perf_counter() - start
+#         tlist.append(time_taken)
+#         print(
+#             f"this_iter: {round(time_taken,10):<12},"
+#             f" moving_average: {round(sum(tlist)/len(tlist),10):<12}"
+#         )
+#         return result
+
+#     return wrapper_func
+
+
+class UserInfo(TypedDict):
 
     customer_id: int
     name: str
