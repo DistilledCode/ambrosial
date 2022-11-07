@@ -1,6 +1,10 @@
+from typing import Any, Literal, Optional
+
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 from july.rcmod import update_rcparams
+from matplotlib.pyplot import Axes
 from matplotlib.ticker import MaxNLocator
 from palettable.lightbartlein import diverging
 
@@ -8,271 +12,210 @@ from ambrosial.swan import SwiggyAnalytics
 from ambrosial.swich.helper.regression import get_dataframe
 from ambrosial.swich.utils import CustomFormatter, CustomLocator
 
-BINS = "per_minute_"
-
 
 class RegressionPlot:
     def __init__(self, swan: SwiggyAnalytics) -> None:
         self.swan = swan
         self.cmap = diverging.BlueOrange8_8_r.mpl_colormap
-        self.scatter_kws_cb = {
+        self.scatter_kw_cb = {
             "color": None,
             "edgecolor": "black",
             "alpha": 0.80,
             "s": 80,
         }
-        self.scatter_kws = {
+        self.scatter_kw = {
             "color": "lawngreen",
             "edgecolor": "black",
             "alpha": 0.70,
             "s": 80,
         }
-        self.line_kws_cb = {"color": "black", "linewidth": 3.0}
-        self.line_kws = {"color": "tomato", "linewidth": 3.0}
+        self.line_kw_cb = {"color": "black", "linewidth": 3.0}
+        self.line_kw = {"color": "tomato", "linewidth": 3.0}
         sns.set_theme(style="ticks")
 
     @property
     def maxnlocator(self) -> MaxNLocator:
         return MaxNLocator(nbins=10)
 
-    def order_amount(self, bins: str = BINS) -> None:
-        update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
-        df = get_dataframe(code="oa", swan=self.swan, bins=bins)
+    def order_amount(self, **kwargs: Any) -> Axes:
 
-        p = sns.regplot(
-            data=df,
-            x="x",
-            y="y",
-            scatter=True,
-            truncate=True,
-            fit_reg=True,
-            order=1,
-            line_kws=self.line_kws,
-            scatter_kws=self.scatter_kws,
+        graph = self._make_regplot(code="oa", cbar=False, ro=False, **kwargs)
+        return self._label_graph(
+            graph=graph,
+            title="Order Total",
+            labels=("Order Count Over Time", "Order Total (in ₹)"),
         )
-        p.set_xticks(range(0, len(df), len(df) // 10))
-        p.set_xticklabels(df["xlabel"][:: len(df) // 10])
-        p.set_title(f'Order Total\nbins="{bins}"', fontsize=15)
-        p.set_xlabel("")
-        p.set_ylabel("Order Total    (in ₹)", fontsize=15)
-        p.grid(True, axis="both", ls=":")
 
-    def ordamt_ordfeeprcnt(
-        self,
-        bins: str = BINS,
-        remove_outliers: bool = True,
-    ) -> None:
-        update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
-        df = get_dataframe(code="oa_ofp", swan=self.swan, bins=bins, ro=remove_outliers)
-        p = sns.regplot(
-            data=df,
-            x="x",
-            y="y",
-            scatter=True,
-            truncate=True,
-            fit_reg=True,
-            order=1,
-            line_kws=self.line_kws,
-            scatter_kws=self.scatter_kws,
+    def ordamt_ordfeeprcnt(self, remove_outliers: bool = True) -> Axes:
+        graph = self._make_regplot(code="oa_ofp", cbar=False, ro=remove_outliers)
+        return self._label_graph(
+            graph=graph,
+            title="Fee Percentage v/s Order Total",
+            labels=("Fee as % of Order Total", "Order Total (in ₹)"),
         )
-        p.set_title(f'Fee Percentage v/s Order Total\nbins="{bins}"', fontsize=15)
-        p.xaxis.set_major_locator(self.maxnlocator)
-        p.yaxis.set_major_locator(self.maxnlocator)
-        p.set_ylabel("Fee as % of Order Total\n", fontsize=15)
-        p.set_xlabel("Order Total    (in ₹)", fontsize=15)
-        p.grid(True, axis="both", ls=":")
 
-    def ordamt_ordfee(self, bins: str = BINS, remove_outliers: bool = True) -> None:
-        update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
-        df = get_dataframe(code="oa_of", swan=self.swan, bins=bins, ro=remove_outliers)
-        p = sns.regplot(
-            data=df,
-            x="x",
-            y="y",
-            scatter=True,
-            truncate=True,
-            fit_reg=True,
-            order=1,
-            line_kws=self.line_kws_cb,
-            scatter_kws={**self.scatter_kws_cb, "c": df["color"], "cmap": self.cmap},
+    def ordamt_ordfee(self, remove_outliers: bool = True) -> Axes:
+        graph = self._make_regplot(
+            code="oa_of",
+            cbar=True,
+            ro=remove_outliers,
+            cbar_label="\tFee as % of\n\tOrder Total".expandtabs(tabsize=12),
         )
-        p.set_title(f'Order Total v/s Order Fee\nbins="{bins}"', fontsize=15)
-        p.xaxis.set_major_locator(self.maxnlocator)
-        p.yaxis.set_major_locator(self.maxnlocator)
-        p.set_xlabel("Order Fee    (in ₹)", fontsize=15)
-        p.set_ylabel("Order Total    (in ₹)", fontsize=15)
-        p.grid(True, axis="both", ls=":")
-        sm = plt.cm.ScalarMappable(cmap=self.cmap)
-        sm.set_array([])
-        ax = p.figure.get_axes()
-        cbar = p.figure.colorbar(
-            sm,
-            ax=ax,
-            ticks=CustomLocator(ticks=10),
-            format=CustomFormatter(vmin=min(df["color"]), vmax=max(df["color"])),
-        )
-        cbar.set_label(
-            """
-                Fee as % of
-                Order Total
-            """,
-            size=15,
-            rotation="horizontal",
+        return self._label_graph(
+            graph=graph,
+            title="Order Total v/s Order Fee",
+            labels=("Order Fee (in ₹)", "Order Total (in ₹)"),
         )
         # robust and order are mutually exclusive
 
-    def ordtime_orddist(self, remove_outliers: bool = True) -> None:
-        update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
-        df = get_dataframe(code="ot_od", swan=self.swan, ro=remove_outliers)
-        p = sns.regplot(
-            data=df,
-            x="x",
-            y="y",
-            scatter=True,
-            truncate=True,
-            fit_reg=True,
-            order=1,
-            line_kws=self.line_kws,
-            scatter_kws=self.scatter_kws,
+    def ordtime_orddist(self, remove_outliers: bool = True) -> Axes:
+        graph = self._make_regplot(code="ot_od", cbar=False, ro=remove_outliers)
+        return self._label_graph(
+            graph=graph,
+            title="Order Delivery Time v/s Order Distance",
+            labels=("Order Distance (kms)", "Order Delivery Time (minutes)"),
         )
-        p.set_title("Order Delivery Time v/s Order Distance", fontsize=15)
-        p.xaxis.set_major_locator(self.maxnlocator)
-        p.yaxis.set_major_locator(self.maxnlocator)
-        p.set_xlabel("Order Distance  (kms)", fontsize=15)
-        p.set_ylabel("Order Delivery Time  (minutes)\n", fontsize=15)
-        p.grid(True, axis="both", ls=":")
 
-    def ordtime_punctuality_bool(self, remove_outliers: bool = True) -> None:
-        update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
-        df = get_dataframe(code="ot_p_b", swan=self.swan, ro=remove_outliers)
-        p = sns.regplot(
-            data=df,
-            x="x",
-            y="y",
-            scatter=True,
-            truncate=True,
-            fit_reg=True,
-            order=1,
+    def ordtime_punctuality_bool(self, remove_outliers: bool = True) -> Axes:
+        graph = self._make_regplot(
+            code="ot_p_b",
+            cbar=False,
+            ro=remove_outliers,
             logistic=True,
             y_jitter=0.15,
-            line_kws=self.line_kws,
-            scatter_kws=self.scatter_kws,
         )
-        p.set_title("Punctuality v/s Order Delivery Time\n", fontsize=15)
-        p.xaxis.set_major_locator(self.maxnlocator)
-        p.set_yticks([0, 1])
-        p.set_yticklabels(["No", "Yes"])
-        p.set_xlabel("Order Delivery Time  (minutes)", fontsize=15)
-        p.set_ylabel("Was Order On Time\n", fontsize=15)
-        p.grid(True, axis="both", ls=":")
 
-    def orddist_punctuality_bool(self, remove_outliers: bool = True) -> None:
-        update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
-        df = get_dataframe(code="od_p_b", swan=self.swan, ro=remove_outliers)
-        p = sns.regplot(
-            data=df,
-            x="x",
-            y="y",
-            scatter=True,
-            truncate=True,
-            fit_reg=True,
-            order=1,
+        return self._label_graph(
+            graph=graph,
+            title="Punctuality v/s Order Delivery Time",
+            labels=("Order Delivery Time (minutes)", "Was Order On Time\n"),
+            y_tick_info=([0, 1], ["No", "Yes"]),
+        )
+
+    def orddist_punctuality_bool(self, remove_outliers: bool = True) -> Axes:
+        graph = self._make_regplot(
+            code="od_p_b",
+            cbar=False,
+            ro=remove_outliers,
             logistic=True,
             y_jitter=0.15,
-            line_kws=self.line_kws,
-            scatter_kws=self.scatter_kws,
         )
-        p.set_title("Punctuality v/s Order Distance\n", fontsize=15)
-        p.xaxis.set_major_locator(self.maxnlocator)
-        p.set_yticks([0, 1])
-        p.set_yticklabels(["No", "Yes"])
-        p.set_xlabel("Order Distance (km)", fontsize=15)
-        p.set_ylabel("Was Order On Time\n", fontsize=15)
-        p.grid(True, axis="both", ls=":")
+        return self._label_graph(
+            graph=graph,
+            title="Punctuality v/s Order Distance",
+            labels=("Order Distance (kms)", "Was Order On Time\n"),
+            y_tick_info=([0, 1], ["No", "Yes"]),
+        )
 
-    def ordtime_punctuality(self, remove_outliers: bool = True) -> None:
-        update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
-        df = get_dataframe(code="ot_p", swan=self.swan, ro=remove_outliers)
-        p = sns.regplot(
-            data=df,
-            x="x",
-            y="y",
-            scatter=True,
-            truncate=True,
-            fit_reg=True,
-            order=1,
-            line_kws=self.line_kws_cb,
-            scatter_kws={**self.scatter_kws_cb, "c": df["color"], "cmap": self.cmap},
+    def ordtime_punctuality(self, remove_outliers: bool = True) -> Axes:
+        cbar_label = "\tSLA\n\tDifference".expandtabs(tabsize=12)
+        graph = self._make_regplot(
+            code="ot_p",
+            cbar=True,
+            cbar_label=cbar_label,
+            ro=remove_outliers,
         )
-        p.set_title(
+        title = (
             "Promised Delivery Time v/s Actual Delivery Time\n"
-            "SLA Difference = Promised Time - Actual Time",
-            fontsize=15,
+            "SLA Difference = Promised Time - Actual Time"
         )
-        p.xaxis.set_major_locator(self.maxnlocator)
-        p.yaxis.set_major_locator(self.maxnlocator)
-        p.set_xlabel("Actual Delivery Time  (minutes)", fontsize=15)
-        p.set_ylabel("Promised Delivery Time  (minutes)", fontsize=15)
-        p.grid(True, axis="both", ls=":")
-        sm = plt.cm.ScalarMappable(cmap=self.cmap)
-        sm.set_array([])
-        ax = p.figure.get_axes()
-        cbar = p.figure.colorbar(
-            sm,
-            ax=ax,
-            ticks=CustomLocator(ticks=10),
-            format=CustomFormatter(vmax=max(df["color"]), vmin=min(df["color"])),
-        )
-        cbar.set_label(
-            """
-                SLA
-                Difference
-            """,
-            size=15,
-            rotation="horizontal",
-        )
+        x_label = "Actual Delivery Time (minutes)"
+        y_label = "Promised Delivery Time (minutes)"
+        return self._label_graph(graph=graph, title=title, labels=(x_label, y_label))
 
-    def ordamt_offramt(self, remove_outliers: bool = True) -> None:
+    def ordamt_offramt(self, remove_outliers: bool = True) -> Axes:
         # TODO: add kwarg option for different properties like axes
         # TODO: also add option to make a regression line or not
         # without regeression line it's just a good ol scatter plot
         # TODO: Categorical plot wherever applicable
+        graph = self._make_regplot(
+            code="oa_oa",
+            cbar=True,
+            cbar_label="\tOffer Saving\n\t(in percent)".expandtabs(tabsize=12),
+            ro=remove_outliers,
+        )
+        return self._label_graph(
+            graph=graph,
+            title="Offer Amount Availed v/s Order Amount Paid",
+            labels=("Order Amount Paid (₹)", "Offer Amount Availed (₹)"),
+        )
+
+    def _make_regplot(
+        self,
+        code: Literal[
+            "oa",
+            "oa_ofp",
+            "oa_of",
+            "ot_od",
+            "ot_p_b",
+            "od_p_b",
+            "ot_p",
+            "oa_oa",
+        ],
+        cbar: bool,
+        ro: bool,
+        cbar_label: Optional[str] = None,
+        **reg_kwargs: Any,
+    ) -> Axes:
         update_rcparams(xmargin=0.05, ymargin=0.05, titlepad=20)
-        df = get_dataframe(code="oa_oa", swan=self.swan, ro=remove_outliers)
-        p = sns.regplot(
+        df = get_dataframe(code, self.swan, ro)
+        if cbar:
+            sc_kw = {"c": df["color"], "cmap": self.cmap}
+            sc_kw = {**sc_kw, **self.scatter_kw_cb}
+        graph = sns.regplot(
             data=df,
             x="x",
             y="y",
-            scatter=True,
             truncate=True,
-            fit_reg=True,
-            order=1,
-            line_kws=self.line_kws_cb,
-            scatter_kws={**self.scatter_kws_cb, "c": df["color"], "cmap": self.cmap},
+            scatter=reg_kwargs.pop("scatter", True),
+            fit_reg=reg_kwargs.pop("fit_reg", True),
+            logistic=reg_kwargs.pop("logistic", False),
+            y_jitter=reg_kwargs.pop("y_jitter", 0.0),
+            order=reg_kwargs.pop("order", 1),
+            line_kws=self.line_kw_cb if cbar else self.line_kw,
+            scatter_kws={**sc_kw} if cbar else self.scatter_kw,
         )
-        p.set_title(
-            "Offer Amount Availed v/s Order Amount Paid",
-            fontsize=15,
-        )
-        p.xaxis.set_major_locator(self.maxnlocator)
-        p.yaxis.set_major_locator(self.maxnlocator)
-        p.set_xlabel("Order Amount Paid  (₹)", fontsize=15, labelpad=10)
-        p.set_ylabel("Offer Amount Availed  (₹)", fontsize=15, labelpad=10)
-        p.grid(True, axis="both", ls=":")
+
+        if cbar is True and cbar_label is not None:
+            return self._make_cbar(graph, df, cbar_label)
+        return graph
+
+    def _make_cbar(self, graph: Axes, df: pd.DataFrame, label: str) -> Axes:
         sm = plt.cm.ScalarMappable(cmap=self.cmap)
         sm.set_array([])
-        ax = p.figure.get_axes()
-        cbar = p.figure.colorbar(
+        ax = graph.figure.get_axes()
+        cbar = graph.figure.colorbar(
             sm,
             ax=ax,
             ticks=CustomLocator(ticks=10),
             format=CustomFormatter(vmax=max(df["color"]), vmin=min(df["color"])),
         )
-        cbar.set_label(
-            """
-                Offer Saving
-                (in percent)
-            """,
-            size=15,
-            rotation="horizontal",
-        )
+        cbar.set_label(label, size=15, rotation="horizontal")
+        return graph
+
+    def _label_graph(
+        self,
+        graph: Axes,
+        title: str,
+        labels: tuple[str, str],
+        x_tick_info: Optional[tuple[list, list]] = None,
+        y_tick_info: Optional[tuple[list, list]] = None,
+    ) -> Axes:
+        x_label, y_label = labels
+        graph.set_title(title, fontsize=15)
+        graph.set_xlabel(x_label, fontsize=15, labelpad=10)
+        graph.set_ylabel(y_label, fontsize=15, labelpad=10)
+        if x_tick_info is None:
+            graph.xaxis.set_major_locator(self.maxnlocator)
+        else:
+            xticks, xtick_labels = x_tick_info
+            graph.set_xticks(xticks)
+            graph.set_xticklabels(xtick_labels)
+        if y_tick_info is None:
+            graph.yaxis.set_major_locator(self.maxnlocator)
+        else:
+            yticks, ytick_labels = y_tick_info
+            graph.set_yticks(yticks)
+            graph.set_yticklabels(ytick_labels)
+        graph.grid(True, axis="both", ls=":")
+        return graph

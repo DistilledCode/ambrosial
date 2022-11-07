@@ -6,8 +6,8 @@ from ambrosial.swan import SwiggyAnalytics
 from ambrosial.swich.utils import remove_outliers
 
 
-def _df_order_amount(swan: SwiggyAnalytics, bins: str, **_: bool) -> pd.DataFrame:
-    data = swan.orders.tseries_amount(bins)
+def _df_order_amount(swan: SwiggyAnalytics, **_: bool) -> pd.DataFrame:
+    data = swan.orders.tseries_amount("per_minute_")
     df = pd.DataFrame(
         {
             "y": data.values(),
@@ -18,9 +18,9 @@ def _df_order_amount(swan: SwiggyAnalytics, bins: str, **_: bool) -> pd.DataFram
     return df
 
 
-def _df_ordamt_ordfeeprcnt(swan: SwiggyAnalytics, bins: str, ro: bool) -> pd.DataFrame:
-    data_amt = swan.orders.tseries_amount(bins)
-    data_chrg = swan.orders.tseries_charges(bins)
+def _df_ordamt_ordfeeprcnt(swan: SwiggyAnalytics, ro: bool) -> pd.DataFrame:
+    data_amt = swan.orders.tseries_amount("per_minute_")
+    data_chrg = swan.orders.tseries_charges("per_minute_")
     amount = list(data_amt.values())
     total_charges = [sum(i.values()) for i in data_chrg.values()]
     charge_percnt = [chrg / amt * 100 for chrg, amt in zip(total_charges, amount)]
@@ -29,9 +29,9 @@ def _df_ordamt_ordfeeprcnt(swan: SwiggyAnalytics, bins: str, ro: bool) -> pd.Dat
     return pd.DataFrame({"x": amount, "y": charge_percnt})
 
 
-def _df_ordamt_ordfee(swan: SwiggyAnalytics, bins: str, ro: bool) -> pd.DataFrame:
-    data_amt = swan.orders.tseries_amount(bins)
-    data_fee = swan.orders.tseries_charges(bins)
+def _df_ordamt_ordfee(swan: SwiggyAnalytics, ro: bool) -> pd.DataFrame:
+    data_amt = swan.orders.tseries_amount("per_minute_")
+    data_fee = swan.orders.tseries_charges("per_minute_")
     total_amount = list(data_amt.values())
     total_fee = [sum(i.values()) for i in data_fee.values()]
     fee_prcnt = [fee / amt for fee, amt in zip(total_fee, total_amount)]
@@ -40,7 +40,7 @@ def _df_ordamt_ordfee(swan: SwiggyAnalytics, bins: str, ro: bool) -> pd.DataFram
     return pd.DataFrame({"x": total_fee, "y": total_amount, "color": fee_prcnt})
 
 
-def _df_ordtime_orddist(swan: SwiggyAnalytics, ro: bool, **_: str) -> pd.DataFrame:
+def _df_ordtime_orddist(swan: SwiggyAnalytics, ro: bool) -> pd.DataFrame:
     distance: list[float] = []
     time_taken: list[float] = []
     for order in swan.swiggy.get_orders():
@@ -52,11 +52,7 @@ def _df_ordtime_orddist(swan: SwiggyAnalytics, ro: bool, **_: str) -> pd.DataFra
     return pd.DataFrame({"x": distance, "y": time_taken})
 
 
-def _df_ordtime_punctuality_bool(
-    swan: SwiggyAnalytics,
-    ro: bool,
-    **_: str,
-) -> pd.DataFrame:
+def _df_ordtime_punctuality_bool(swan: SwiggyAnalytics, ro: bool) -> pd.DataFrame:
     orders = swan.swiggy.get_orders()
     delivery_time: list[float] = []
     punctuality: list[bool] = []
@@ -69,11 +65,7 @@ def _df_ordtime_punctuality_bool(
     return pd.DataFrame({"x": delivery_time, "y": punctuality})
 
 
-def _df_orddist_punctuality_bool(
-    swan: SwiggyAnalytics,
-    ro: bool,
-    **_: str,
-) -> pd.DataFrame:
+def _df_orddist_punctuality_bool(swan: SwiggyAnalytics, ro: bool) -> pd.DataFrame:
     orders = swan.swiggy.get_orders()
     delivery_dist: list[float] = []
     punctuality: list[bool] = []
@@ -86,11 +78,7 @@ def _df_orddist_punctuality_bool(
     return pd.DataFrame({"x": delivery_dist, "y": punctuality})
 
 
-def _df_ordtime_punctuality(
-    swan: SwiggyAnalytics,
-    ro: bool,
-    **_: str,
-) -> pd.DataFrame:
+def _df_ordtime_punctuality(swan: SwiggyAnalytics, ro: bool) -> pd.DataFrame:
     orders = swan.swiggy.get_orders()
     act_time: list[int] = []
     prom_time: list[int] = []
@@ -105,11 +93,7 @@ def _df_ordtime_punctuality(
     return pd.DataFrame({"x": act_time, "y": prom_time, "color": sla_diff})
 
 
-def _df_ordamt_offramt(
-    swan: SwiggyAnalytics,
-    ro: bool,
-    **_: str,
-) -> pd.DataFrame:
+def _df_ordamt_offramt(swan: SwiggyAnalytics, ro: bool) -> pd.DataFrame:
     orders = swan.swiggy.get_orders()
     order_amount = []
     offer_amount = []
@@ -143,8 +127,7 @@ def get_dataframe(
         "oa_oa",
     ],
     swan: SwiggyAnalytics,
-    bins: str = "",
-    ro: bool = True,
+    ro: bool,
 ) -> pd.DataFrame:
     func_dict: dict[str, Callable[..., pd.DataFrame]] = {
         "oa": _df_order_amount,
@@ -157,4 +140,4 @@ def get_dataframe(
         "oa_oa": _df_ordamt_offramt,
     }
 
-    return func_dict[code](swan, bins=bins, ro=ro)
+    return func_dict[code](swan, ro=ro)
