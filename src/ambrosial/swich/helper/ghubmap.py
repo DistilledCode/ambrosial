@@ -1,5 +1,5 @@
 import heapq
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 from typing import Any, Callable, Literal, Union
 
@@ -9,15 +9,6 @@ from ambrosial.swan import SwiggyAnalytics
 from ambrosial.swiggy.datamodel.item import Item
 from ambrosial.swiggy.datamodel.order import Order
 from ambrosial.swiggy.datamodel.restaurant import Restaurant
-
-# def timeit(func):
-#     def wrapper_func(*args, **kwargs):
-#         st = perf_counter()
-#         result = func(*args, **kwargs)
-#         print(perf_counter() - st)
-#         return result
-
-#     return wrapper_func
 
 
 def july_heatmap_args(kwargs: dict[str, Any]) -> dict[str, Any]:
@@ -57,16 +48,10 @@ def super_plot_value(swan: SwiggyAnalytics) -> tuple[list[date], list[float]]:
 
 
 def total_savings_plot_value(swan: SwiggyAnalytics) -> tuple[list[date], list[float]]:
-    offer_drange, offer_values = offer_plot_value(swan)
-    offer_vd = dict(zip(offer_drange, offer_values))
-    super_drange, super_values = super_plot_value(swan)
-    super_vd = dict(zip(super_drange, super_values))
-    drange = date_range(
-        min(min(offer_drange), min(super_drange)),
-        max(max(offer_drange), max(super_drange)),
-    )
-    values = [offer_vd.get(date_, 0) + super_vd.get(date_, 0) for date_ in drange]
-    return drange, values
+    offer_dict = dict(zip(*offer_plot_value(swan)))
+    super_dict = dict(zip(*super_plot_value(swan)))
+    counter = dict(Counter(offer_dict) + Counter(super_dict))
+    return list(counter.keys()), list(counter.values())
 
 
 def get_grouped_restaurant(
