@@ -5,7 +5,7 @@ from july import colormaps, rcmod
 from matplotlib.pyplot import Axes
 
 from ambrosial.swan import SwiggyAnalytics
-from ambrosial.swich.helper.heatmap import get_dataframe
+from ambrosial.swich.helper.heatmap import get_data, get_dataframe
 
 
 class HeatMap:
@@ -17,6 +17,7 @@ class HeatMap:
             r"does not match the number of ticklabels \([0-9]+\)."
         )
 
+    # TODO: All these plots can also have a ridgeline/joy plot
     def order_amount(
         self,
         bins: str = "month_+week_",
@@ -30,7 +31,7 @@ class HeatMap:
             data=data,
             bin_=bin_,
             drop_empty=drop_empty,
-            title="Order Amount",
+            title="Amount Spent (₹)",
             **hm_kwargs,
         )
 
@@ -48,6 +49,74 @@ class HeatMap:
             bin_=bin_,
             drop_empty=drop_empty,
             title="Order Count",
+            **hm_kwargs,
+        )
+
+    def avg_delivery_time(
+        self,
+        bins: str = "month_+day",
+        drop_empty: bool = True,
+        **hm_kwargs: Any,
+    ) -> Axes:
+        bin_ = self._get_bin_list(bins)
+        data = get_data(code="rdt", swan=self.swan, bin_=bin_)
+
+        return self._make_heatmap(
+            data=data,
+            bin_=bin_,
+            drop_empty=drop_empty,
+            title="Average Delivery Time (minutes)",
+            **hm_kwargs,
+        )
+
+    def offer_discount(
+        self,
+        bins: str = "month_+day",
+        drop_empty: bool = True,
+        **hm_kwargs: Any,
+    ) -> Axes:
+        bin_ = self._get_bin_list(bins)
+        data = get_data(code="od", swan=self.swan, bin_=bin_)
+
+        return self._make_heatmap(
+            data=data,
+            bin_=bin_,
+            drop_empty=drop_empty,
+            title="Offer Discount (₹)",
+            **hm_kwargs,
+        )
+
+    def super_benefits(
+        self,
+        bins: str = "month_+day",
+        drop_empty: bool = True,
+        **hm_kwargs: Any,
+    ) -> Axes:
+        bin_ = self._get_bin_list(bins)
+        data = get_data(code="sb", swan=self.swan, bin_=bin_)
+
+        return self._make_heatmap(
+            data=data,
+            bin_=bin_,
+            drop_empty=drop_empty,
+            title="Super Benefits (₹)",
+            **hm_kwargs,
+        )
+
+    def total_saving(
+        self,
+        bins: str = "month_+day",
+        drop_empty: bool = True,
+        **hm_kwargs: Any,
+    ) -> Axes:
+        bin_ = self._get_bin_list(bins)
+        data = get_data(code="ts", swan=self.swan, bin_=bin_)
+
+        return self._make_heatmap(
+            data=data,
+            bin_=bin_,
+            drop_empty=drop_empty,
+            title="Total Saving: Discount + Super (₹)",
             **hm_kwargs,
         )
 
