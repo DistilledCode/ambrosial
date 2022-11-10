@@ -103,18 +103,46 @@ class RestaurantAnalytics:
             ).most_common()
         )
 
-    def search_cuisine(self, cuisine: str, exact: bool = True) -> set[Restaurant]:
-        # TODO: option to search multiple cuisines at once
+    def search_restaurant(
+        self,
+        name: str,
+        area: Optional[str] = None,
+        exact: bool = True,
+    ) -> list[Restaurant]:
+        if exact:
+            return [
+                restaurant
+                for restaurant in self.all_restaurants
+                if name.lower() == restaurant.name.lower()
+                and bool(
+                    area.lower() == restaurant.area_name.lower()
+                    if area is not None
+                    else True
+                )
+            ]
+
+        return [
+            restaurant
+            for restaurant in self.all_restaurants
+            if name.lower() in restaurant.name.lower()
+            and bool(
+                area.lower() in restaurant.area_name.lower()
+                if area is not None
+                else True
+            )
+        ]
+
+    def search_cuisine(self, cuisine: str, exact: bool = True) -> list[Restaurant]:
         return (
-            {
+            [
                 restaurant
                 for restaurant in self.all_restaurants
                 if cuisine.lower() in restaurant.cuisine
-            }
+            ]
             if exact
-            else {
+            else [
                 restaurant
                 for restaurant in self.all_restaurants
                 if any(cuisine.lower() in c for c in restaurant.cuisine)
-            }
+            ]
         )
