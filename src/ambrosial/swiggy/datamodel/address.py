@@ -15,7 +15,7 @@ class Address(BaseModel):
     city: str
     lat: float
     lng: float
-    address_id: int
+    address_id: str
     address_line1: str
     address_line2: str
     alternate_mobile: str

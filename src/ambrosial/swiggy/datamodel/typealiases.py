@@ -4,27 +4,14 @@ from typing_extensions import TypeAlias
 
 
 class OrderTypeHint:
-    TIP_DETAILS: TypeAlias = dict[Literal["amount", "optIn", "type"], Union[float, str]]
     ORDER_STATUS: TypeAlias = Literal["Delivered", "cancelled"]
     POST_STATUS: TypeAlias = Literal["completed", "cancelled"]
     ORDER_DELIVERY_STATUS: TypeAlias = Literal["", "delivered"]
     CUST_LAT_LNG: TypeAlias = dict[Literal["lat", "lng"], float]
     PAYMENT_TXN_STATUS: TypeAlias = Literal["refund-initiated", "success"]
-    COUPON_TYPE: TypeAlias = Literal["", "Discount"]
     RATING_META: TypeAlias = dict[
         Literal["restaurant_rating", "delivery_rating"],
         dict[Literal["rating", "title"], Union[int, str]],
-    ]
-    CONFIGURATIONS: TypeAlias = dict[
-        Literal[
-            "cancel_not_allowed",
-            "edit_not_allowed",
-            "external_relay_info",
-            "no_delivery_notification",
-            "reorder_not_allowed",
-            "self_delivery",
-        ],
-        bool,
     ]
     FREE_DEL_BREAK_UP: TypeAlias = dict[
         Literal[

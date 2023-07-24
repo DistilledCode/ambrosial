@@ -1,10 +1,12 @@
+from typing import Optional
+
 from pydantic import BaseModel, HttpUrl, NonNegativeFloat, NonNegativeInt
 
 from ambrosial.swiggy.datamodel.typealiases import ItemTypeHint
 
 
 class Item(BaseModel):
-    rewardType: str
+    rewardType: Optional[str] = None
     has_variantv2: bool
     order_id: int
     restaurant_id: int

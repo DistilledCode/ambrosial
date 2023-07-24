@@ -38,7 +38,6 @@ class RegressionPlot:
         return MaxNLocator(nbins=10)
 
     def order_amount(self, **kwargs: Any) -> Axes:
-
         graph = self._make_regplot(code="oa", cbar=False, ro=False, **kwargs)
         return self._label_graph(
             graph=graph,
@@ -51,7 +50,7 @@ class RegressionPlot:
         return self._label_graph(
             graph=graph,
             title="Fee Percentage v/s Order Total",
-            labels=("Fee as % of Order Total", "Order Total (in ₹)"),
+            labels=("Order Total (in ₹)", "Fee as % of Order Total"),
         )
 
     def ordamt_ordfee(self, remove_outliers: bool = True) -> Axes:

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Optional
 
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt
 
@@ -34,7 +34,7 @@ class Payment(BaseModel):
     paymentMethodDisplayName: str
     transactionId: str
     amount: NonNegativeFloat
-    paymentMeta: dict[str, Union[str, dict[str, Any]]]
+    paymentMeta: Optional[dict] = None
     transactionStatus: str
     swiggyTransactionId: str
     pgTransactionId: str
@@ -52,7 +52,7 @@ class Payment(BaseModel):
 
 
 class Order(BaseModel):
-    tipDetails: OrderTypeHint.TIP_DETAILS
+    tipDetails: Optional[dict] = None
     order_id: int
     address: Address
     items: list[Item]
@@ -101,10 +101,7 @@ class Order(BaseModel):
     rain_mode: int
     is_super_long_distance: bool
     previous_cancellation_fee: NonNegativeInt
-    coupon_type: OrderTypeHint.COUPON_TYPE
-    coupon_description: str
     mCancellationTime: NonNegativeInt
-    configurations: OrderTypeHint.CONFIGURATIONS
     free_del_break_up: OrderTypeHint.FREE_DEL_BREAK_UP
     order_tags: list[str]
     updated_at: str

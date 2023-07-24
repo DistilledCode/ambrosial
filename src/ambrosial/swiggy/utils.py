@@ -29,7 +29,6 @@ SwiggyOrderDict = NewType("SwiggyOrderDict", dict[str, Any])
 
 
 class UserInfo(TypedDict):
-
     customer_id: int
     name: str
     mobile: str
@@ -74,7 +73,7 @@ def validate_response(response: Response) -> None:
 
 
 def get_cookies(domain_name: str) -> CookieJar:
-    cookie_jar = browser_cookie3.load(domain_name)
+    cookie_jar = browser_cookie3.firefox(domain_name=domain_name)
     if not len(cookie_jar) > 0:
         raise CookieError(f"{repr(domain_name)}: No cookies found.")
     return cookie_jar

@@ -37,22 +37,22 @@ class Swiggy:
         utils.validate_response(self._response)
         return not bool(self._response_json["data"]["orders"])
 
-    def get_account_info(self) -> utils.UserInfo:
-        temp_cookie = self._cookie_jar
-        temp_cookie.set_cookie(utils.get_empty_sid())
-        self._response = get(Swiggy.profile_url, cookies=temp_cookie)
-        self._response_json = self._response.json()
-        utils.validate_response(self._response)
-        data = self._response_json["data"]
-        return utils.UserInfo(
-            customer_id=data["customer_id"],
-            name=data["name"],
-            mobile=data["mobile"],
-            email=data["email"],
-            emailVerified=data["emailVerified"],
-            super_status=data["optional_map"]["IS_SUPER"]["value"]["superStatus"],
-            user_registered=data["user_registered"],
-        )
+    # def get_account_info(self) -> utils.UserInfo:
+    #     temp_cookie = self._cookie_jar
+    #     temp_cookie.set_cookie(utils.get_empty_sid())
+    #     self._response = get(Swiggy.profile_url, cookies=temp_cookie)
+    #     self._response_json = self._response.json()
+    #     utils.validate_response(self._response)
+    #     data = self._response_json["data"]
+    #     return utils.UserInfo(
+    #         customer_id=data["customer_id"],
+    #         name=data["name"],
+    #         mobile=data["mobile"],
+    #         email=data["email"],
+    #         emailVerified=data["emailVerified"],
+    #         super_status=data["optional_map"]["IS_SUPER"]["value"]["superStatus"],
+    #         user_registered=data["user_registered"],
+    #     )
 
     def fetch_orders(self) -> None:
         self.orders_raw = []
@@ -66,13 +66,13 @@ class Swiggy:
         self.orders_refined = self._get_processed_order()
         self._post_fetch()
 
-    def fetchall(self) -> None:
-        """Fetch both order details & account info.
+    # def fetchall(self) -> None:
+    #     """Fetch both order details & account info.
 
-        Same as calling ``fetch_orders()`` and ``get_account_info()``.
-        """
-        self.fetch_orders()
-        self.get_account_info()
+    #     Same as calling ``fetch_orders()`` and ``get_account_info()``.
+    #     """
+    #     self.fetch_orders()
+    #     self.get_account_info()
 
     def get_order(self, order_id: int) -> Order:
         return convert.order(self.cache.get_order(order_id=order_id), self.ddav)
@@ -156,7 +156,24 @@ class Swiggy:
 
     def _send_req(self, order_id: Optional[int] = None) -> None:
         param = {} if order_id is None else {"order_id": order_id}
-        self._response = get(Swiggy.order_url, cookies=self._cookie_jar, params=param)
+        cookie_str = "; ".join([f"{c.name}={c.value}" for c in self._cookie_jar])
+
+        headers_list = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0",
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Referer": "https://www.swiggy.com/my-account",
+            "Content-Type": "application/json",
+            "__fetch_req__": "true",
+            "Connection": "keep-alive",
+            "Cookie": cookie_str,
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+        }
+
+        self._response = get(Swiggy.order_url, headers=headers_list, params=param)
         self._response_json = self._response.json()
 
     def _get_processed_order(self) -> list[SwiggyOrderDict]:
