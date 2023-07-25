@@ -12,8 +12,10 @@ def test_init():
     swiggy = Swiggy()
     assert swiggy.ddav is False
     assert swiggy._fetched is False
-    assert swiggy.orders_raw is []
-    assert swiggy.orders_refined is []
+    assert type(swiggy.orders_raw) is list
+    assert len(swiggy.orders_raw) == 0
+    assert type(swiggy.orders_refined) is list
+    assert len(swiggy.orders_refined) == 0
 
 
 def test_startup():
