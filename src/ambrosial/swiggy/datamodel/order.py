@@ -52,7 +52,6 @@ class Payment(BaseModel):
 
 
 class Order(BaseModel):
-    tipDetails: Optional[dict] = None
     order_id: int
     address: Address
     items: list[Item]
