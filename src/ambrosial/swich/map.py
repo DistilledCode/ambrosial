@@ -34,21 +34,30 @@ class Map:
 
     def count_density(
         self,
-        city: str,
+        city: Optional[str] = None,
         nationwide: bool = False,
         hover_frmt: Optional[str] = None,
         popup_frmt: Optional[str] = None,
         save: bool = True,
     ) -> folium.Map:
-        restaurants = (
-            self.swan.swiggy.get_restaurants()
-            if nationwide
-            else (
+        if city:
+            restaurants = [
                 restaurant
                 for restaurant in self.swan.swiggy.get_restaurants()
                 if restaurant.city_name.lower() == city.lower()
-            )
-        )
+            ]
+
+        else:
+            restaurants = self.swan.swiggy.get_restaurants()
+        # restaurants = (
+        #     self.swan.swiggy.get_restaurants()
+        #     if city is None and nationwide is True
+        #     else (
+        #         restaurant
+        #         for restaurant in self.swan.swiggy.get_restaurants()
+        #         if restaurant.city_name.lower() == city.lower()
+        #     )
+        # )
         grouped = Counter(restaurants).most_common()
         return self._make_map(
             grouped=grouped,
@@ -60,22 +69,22 @@ class Map:
 
     def amount_density(
         self,
-        city: str,
+        city: Optional[str] = None,
         nationwide: bool = False,
         hover_frmt: Optional[str] = None,
         popup_frmt: Optional[str] = None,
         save: bool = True,
     ) -> folium.Map:
         all_instances = self.swan.orders.grouped_instances(key="restaurant")
-        filtered_instances = (
-            all_instances
-            if nationwide
-            else {
+        if city:
+            filtered_instances = {
                 restaurant: orders
                 for restaurant, orders in all_instances.items()
                 if restaurant.city_name.lower() == city.lower()
             }
-        )
+
+        else:
+            filtered_instances = all_instances
 
         grouped = [
             (restaurant, sum(order.order_total for order in orders))
