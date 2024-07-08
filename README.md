@@ -103,7 +103,7 @@ Now you can use the `SwiggyChart` instance to create various visualizations:
 
 ```python
 # Create a bar plot of top 10 most ordered items
-swich.barplot.top_items(top_n=10)
+swich.barplot.restaurant_deltime()
 ```
 
 ![Bar Plot Example](https://github.com/DistilledCode/ambrosial/assets/107433905/b4e23f94-27d7-4411-933b-fbf2515682a6)
@@ -112,7 +112,7 @@ swich.barplot.top_items(top_n=10)
 
 ```python
 # Create a calendar plot showing order frequency
-swich.calplot.order_frequency()
+swich.calplot.order_count()
 ```
 
 ![Calendar Plot Example](https://github.com/DistilledCode/ambrosial/assets/107433905/e08f6fe4-2ba8-4d90-8577-590456a69eba)
@@ -121,7 +121,7 @@ swich.calplot.order_frequency()
 
 ```python
 # Create a GitHub-style map of order history
-swich.ghubmap.order_history()
+swich.ghubmap.order_amount()
 ```
 
 ![GitHub-style Map Example](https://github.com/DistilledCode/ambrosial/assets/107433905/c811bbf9-c25d-4d75-90e1-0b6e5a561d98)
@@ -130,7 +130,7 @@ swich.ghubmap.order_history()
 
 ```python
 # Create a heat map of order timings
-swich.heatmap.order_timings()
+swich.heatmap.order_count()
 ```
 
 ![Heat Map Example](https://github.com/DistilledCode/ambrosial/assets/107433905/7259dabf-3bb4-4bec-b611-ca6bfb0d5c37)
@@ -139,7 +139,7 @@ swich.heatmap.order_timings()
 
 ```python
 # Create an interactive map of order locations
-swich.map.order_locations()
+swich.map.count_density()
 ```
 
 ![Interactive Map Example](https://github.com/DistilledCode/ambrosial/assets/107433905/66b127fa-ab33-44ed-8eb8-81a8fadc730e)
@@ -148,7 +148,7 @@ swich.map.order_locations()
 
 ```python
 # Create a regression plot of order values over time
-swich.regplot.order_value_trend()
+swich.regplot.ordamt_ordfee()
 ```
 
 ![Regression Plot Example](https://github.com/DistilledCode/ambrosial/assets/107433905/4b63017c-42ee-43c4-90aa-5d53be6022dc)
@@ -157,7 +157,7 @@ swich.regplot.order_value_trend()
 
 ```python
 # Create a word cloud of restaurant names
-swich.wcloud.restaurant_names()
+swich.wcloud.restaurant_name()
 ```
 
 ![Word Cloud Example](https://github.com/DistilledCode/ambrosial/assets/107433905/d89326c8-52fd-4a8d-baa6-f0c43e590bb8)
@@ -280,4 +280,3 @@ Remember to check the documentation or source code of each visualization method 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-```
