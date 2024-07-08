@@ -66,7 +66,7 @@ src/
 ## Basic Setup
 
 > [!TIP]
-> You can also refer to [advanced examples](.   /advanced/README.md)
+> You can also refer to [advanced examples](./advanced/README.md)
 >
 
 To start using the package, import the necessary modules and create instances of the main classes:
